@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Key Trainer – Tap to Answer</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+    background: #f4f1ea;
+    color: #2c2c2c;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 0.8rem;
+  }
+  .app {
+    background: #fff;
+    width: 100%;
+    max-width: 820px;
+    border-radius: 18px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+    padding: 1.2rem 1rem 1.4rem;
+  }
+  @media (max-width: 600px) {
+    body { padding: 0.4rem; }
+    .app { padding: 1rem 0.75rem 1.2rem; border-radius: 12px; }
+    h1 { font-size: 1.2rem; }
+    .subtitle { font-size: 0.75rem; margin-bottom: 0.8rem; }
+    .selectors { gap: 0.35rem; margin-bottom: 0.8rem; }
+    .selectors label { font-size: 0.6rem; }
+    .selectors select { font-size: 0.8rem; padding: 0.35rem 0.5rem; }
+    .wake-switch { font-size: 0.85rem; padding: 0.5rem 0.9rem 0.5rem 0.6rem; }
+    .wake-switch .track { width: 44px; height: 26px; }
+    .wake-switch .thumb { width: 20px; height: 20px; }
+    .wake-switch.on .thumb { left: 22px; }
+    .wake-status-line { font-size: 0.72rem; }
+    .question-text { font-size: 1rem; }
+    .tray-item { font-size: 0.88rem; padding: 0.3rem 0.55rem; }
+    button.action { font-size: 0.82rem; padding: 0.55rem 1rem; }
+    .solution { font-size: 0.8rem; padding: 0.85rem 0.9rem; }
+    .solution table { font-size: 0.72rem; }
+    .roman-grid th { font-size: 0.9rem; padding: 0.35rem 0.2rem; }
+    .roman-grid td { font-size: 0.8rem; padding: 0.35rem 0.2rem; }
+    .chord-group-header { font-size: 0.85rem; padding: 0.5rem 0.7rem; }
+    .chord-group-header .root-letter { font-size: 1rem; }
+    .chord-group-body { padding: 0.5rem 0.55rem; gap: 0.35rem; }
+    .chord-group-body button { font-size: 0.82rem; padding: 0.5rem 0.6rem; min-width: 40px; }
+  }
+  h1 { font-size: 1.4rem; text-align: center; color: #3a3a3a; margin-bottom: 0.2rem; }
+  .subtitle { text-align: center; font-size: 0.8rem; color: #8a8a8a; margin-bottom: 1rem; }
+  .selectors { display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .selectors label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: #8a8172; font-weight: 600; display: block; margin-bottom: 0.2rem; }
+  .selectors select { font-family: inherit; font-size: 0.85rem; padding: 0.4rem 0.6rem; border-radius: 8px; border: 2px solid #e0d9cc; background: #fdfaf5; color: #2c2c2c; cursor: pointer; }
+  .sync-status { text-align: center; font-size: 0.7rem; color: #a09b8f; margin-bottom: 0.7rem; min-height: 1rem; }
+  .sync-status.synced { color: #5b8c4e; }
+  .sync-status.error { color: #b45a4a; }
+  .wake-section { display: flex; flex-direction: column; align-items: center; margin-bottom: 1rem; gap: 0.4rem; }
+  .wake-switch { display: inline-flex; align-items: center; gap: 0.7rem; padding: 0.55rem 1.2rem 0.55rem 0.8rem; border-radius: 50px; border: 3px solid #b45a4a; background: #fae8e5; color: #8a2b1a; cursor: pointer; transition: background 0.25s, border-color 0.25s, color 0.25s, box-shadow 0.25s; font-family: inherit; font-size: 0.95rem; font-weight: 800; letter-spacing: 0.02em; user-select: none; box-shadow: 0 2px 8px rgba(180, 90, 74, 0.15); }
+  .wake-switch:hover:not(.disabled) { box-shadow: 0 4px 14px rgba(180, 90, 74, 0.3); }
+  .wake-switch .track { position: relative; display: inline-block; width: 50px; height: 28px; border-radius: 28px; background: #d8b4ac; transition: background 0.25s; flex-shrink: 0; }
+  .wake-switch .thumb { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.3); transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+  .wake-switch.on { background: #5b8c4e; border-color: #3f6a34; color: #fff; box-shadow: 0 3px 12px rgba(91, 140, 78, 0.4); }
+  .wake-switch.on:hover:not(.disabled) { background: #4f7d43; box-shadow: 0 4px 16px rgba(91, 140, 78, 0.5); }
+  .wake-switch.on .track { background: rgba(255,255,255,0.35); }
+  .wake-switch.on .thumb { left: 25px; background: #fff; }
+  .wake-switch:not(.on) .track { background: #d8b4ac; }
+  .wake-switch.disabled { cursor: not-allowed; opacity: 0.85; }
+  .wake-switch.disabled:hover { box-shadow: 0 2px 8px rgba(180, 90, 74, 0.15); }
+  .wake-status-line { font-size: 0.78rem; font-weight: 600; text-align: center; line-height: 1.35; max-width: 92%; }
+  .wake-status-line.on { color: #5b8c4e; }
+  .wake-status-line.off { color: #b45a4a; }
+  .wake-status-line.unavailable { color: #b8860b; }
+  .progress-bar { height: 6px; background: #e6e2d8; border-radius: 4px; overflow: hidden; margin-bottom: 0.6rem; }
+  .progress-fill { height: 100%; width: 0%; background: #b08d57; transition: width 0.35s ease; }
+  .round-label { text-align: center; font-size: 0.75rem; color: #8a8172; margin-bottom: 0.8rem; letter-spacing: 0.03em; }
+  .round-label b { color: #5a4a32; }
+  .scoreboard { display: flex; justify-content: space-between; font-size: 0.8rem; color: #777; margin-bottom: 1rem; }
+  .scoreboard .score-correct { color: #5b8c4e; font-weight: 600; }
+  .scoreboard .score-wrong { color: #b45a4a; font-weight: 600; }
+  .question-box { background: #fdfaf5; border: 2px solid #e0d9cc; border-radius: 14px; padding: 1.2rem 1rem; margin-bottom: 0.9rem; text-align: center; }
+  .question-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.18em; color: #a09b8f; margin-bottom: 0.4rem; font-weight: 600; }
+  .question-text { font-size: 1.15rem; font-weight: 600; line-height: 1.35; }
+  .tray-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.15em; color: #a09b8f; font-weight: 600; margin-bottom: 0.3rem; text-align: center; }
+  .tray { min-height: 56px; background: #f7f3eb; border: 2px dashed #d8cfbe; border-radius: 12px; padding: 0.55rem; display: flex; flex-wrap: wrap; gap: 0.35rem; justify-content: center; align-items: center; margin-bottom: 0.8rem; }
+  .tray-empty { color: #b5aa97; font-size: 0.85rem; font-style: italic; }
+  .tray-item { background: #fff; border: 2px solid #c9b89a; border-radius: 8px; padding: 0.35rem 0.65rem; font-weight: 600; font-size: 0.95rem; color: #5a4a32; display: flex; flex-direction: column; align-items: center; gap: 0.15rem; position: relative; }
+  .tray-item .chip-row { display: flex; align-items: center; gap: 0.3rem; }
+  .tray-item.correct { border-color: #5b8c4e; background: #e8f5e0; color: #3a5a2a; }
+  .tray-item.wrong { border-color: #b45a4a; background: #fae8e5; color: #7a2a1a; }
+  .tray-item .correct-answer { font-size: 0.7rem; color: #5a7a4a; font-weight: 700; letter-spacing: 0.02em; }
+  .tray-item .remove { cursor: pointer; color: #b45a4a; font-weight: 700; font-size: 0.85rem; line-height: 1; padding: 0 0.15rem; }
+  .tray-item .remove:hover { color: #8a2b1a; }
+  .tray-item.correct .remove, .tray-item.wrong .remove { display: none; }
+  .bank-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.15em; color: #a09b8f; font-weight: 600; margin-bottom: 0.35rem; text-align: center; }
+  .bank { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; margin-bottom: 0.9rem; }
+  .bank button { font-family: inherit; font-size: 0.88rem; font-weight: 600; padding: 0.45rem 0.7rem; border-radius: 8px; border: 2px solid #c9b89a; background: #fff; color: #5a4a32; cursor: pointer; transition: background 0.12s, transform 0.08s; min-width: 40px; }
+  .bank button:hover:not(:disabled) { background: #f0e9dd; }
+  .bank button:active:not(:disabled) { transform: scale(0.96); }
+  .bank button:disabled { opacity: 0.35; cursor: default; }
+  .chord-groups { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.9rem; }
+  .chord-group { border: 1px solid #e0d9cc; border-radius: 10px; overflow: hidden; background: #fdfaf5; }
+  .chord-group-header { display: flex; align-items: center; justify-content: space-between; padding: 0.55rem 0.8rem; cursor: pointer; font-family: inherit; font-size: 0.9rem; font-weight: 700; color: #5a4a32; background: #f2ece0; border: none; width: 100%; text-align: left; transition: background 0.15s; user-select: none; }
+  .chord-group-header:hover { background: #eae2d2; }
+  .chord-group-header .root-letter { font-size: 1.05rem; letter-spacing: 0.04em; }
+  .chord-group-header .arrow { font-size: 0.7rem; color: #8a7f6c; transition: transform 0.2s; }
+  .chord-group.open .chord-group-header .arrow { transform: rotate(90deg); }
+  .chord-group-body { display: none; flex-wrap: wrap; gap: 0.4rem; padding: 0.6rem 0.7rem; background: #fff; }
+  .chord-group.open .chord-group-body { display: flex; }
+  .chord-group-body button { font-family: inherit; font-size: 0.88rem; font-weight: 600; padding: 0.45rem 0.7rem; border-radius: 8px; border: 2px solid #c9b89a; background: #fff; color: #5a4a32; cursor: pointer; transition: background 0.12s, transform 0.08s; min-width: 44px; }
+  .chord-group-body button:hover:not(:disabled) { background: #f0e9dd; }
+  .chord-group-body button:active:not(:disabled) { transform: scale(0.96); }
+  .chord-group-body button:disabled { opacity: 0.35; cursor: default; }
+  .btn-row { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-bottom: 0.9rem; }
+  button.action { font-family: inherit; font-size: 0.88rem; font-weight: 600; padding: 0.6rem 1.2rem; border-radius: 50px; border: 2px solid #c9b89a; background: #fff; color: #5a4a32; cursor: pointer; transition: background 0.15s, transform 0.1s; }
+  button.action:hover:not(:disabled) { background: #f0e9dd; }
+  button.action:active:not(:disabled) { transform: scale(0.97); }
+  button.action:disabled { opacity: 0.35; cursor: default; }
+  button.action.primary { background: #b08d57; border-color: #b08d57; color: #fff; }
+  button.action.primary:hover:not(:disabled) { background: #9a7a48; }
+  button.action.ghost { border-color: #ddd5c6; color: #8a7f6c; font-size: 0.82rem; padding: 0.5rem 1rem; }
+  .feedback { text-align: center; font-weight: 600; font-size: 0.9rem; min-height: 1.3rem; margin-bottom: 0.7rem; }
+  .feedback.correct { color: #5b8c4e; }
+  .feedback.wrong { color: #b45a4a; }
+  .solution { display: none; background: #f7f3eb; border: 2px solid #e0d9cc; border-radius: 14px; padding: 1rem 1.1rem; margin-bottom: 0.9rem; font-size: 0.85rem; line-height: 1.5; color: #3f3a33; }
+  .solution.show { display: block; }
+  .solution h3 { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: #8a7f6c; margin-bottom: 0.5rem; }
+  .solution ol { margin-left: 1.1rem; margin-bottom: 0.5rem; }
+  .solution li { margin-bottom: 0.3rem; }
+  .solution code { background: #ece5d8; padding: 0.1rem 0.35rem; border-radius: 4px; font-family: 'SF Mono', Consolas, monospace; font-size: 0.8rem; color: #5a4a32; }
+  .solution table { width: 100%; border-collapse: collapse; margin: 0.4rem 0; font-size: 0.8rem; }
+  .solution th, .solution td { border: 1px solid #e0d9cc; padding: 0.3rem 0.4rem; text-align: center; }
+  .solution th { background: #ece5d8; color: #5a4a32; font-weight: 600; }
+  .theory-box { background: #fff5e0; border: 1px solid #e8c88a; border-left: 4px solid #d4a043; border-radius: 8px; padding: 0.7rem 0.9rem; margin-bottom: 0.7rem; font-size: 0.83rem; line-height: 1.5; color: #5a4520; }
+  .theory-box .theory-title { font-weight: 700; color: #8a6a20; margin-bottom: 0.3rem; display: block; }
+  .theory-box code { background: #f5e3c0; color: #6a4a10; }
+  .practical-section { margin-top: 1rem; padding-top: 0.8rem; border-top: 2px dashed #d4a043; }
+  .practical-section .practical-title { font-size: 0.8rem; font-weight: 700; color: #8a6a20; margin-bottom: 0.5rem; letter-spacing: 0.03em; }
+  .roman-grid { width: 100%; border-collapse: collapse; margin: 0.4rem 0 0.2rem 0; font-family: 'SF Mono', Consolas, monospace; }
+  .roman-grid th { background: #ece5d8; color: #5a4a32; font-weight: 700; padding: 0.45rem 0.3rem; border: 1px solid #e0d9cc; text-align: center; font-size: 1rem; }
+  .roman-grid td { background: #fff; color: #4a4030; font-weight: 600; padding: 0.45rem 0.3rem; border: 1px solid #e0d9cc; text-align: center; font-size: 0.9rem; }
+  .chord-caption { font-size: 0.75rem; color: #8a7f6c; margin-top: 0.15rem; margin-bottom: 0.3rem; font-weight: 600; }
+  .bottom-row { display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>Key Trainer</h1>
+  <p class="subtitle">Tap to build your answer — every option is available</p>
+
+  <div class="selectors">
+    <div>
+      <label for="modeSelect">Mode</label>
+      <select id="modeSelect">
+        <option value="scale">Scale notes</option>
+        <option value="chords" selected>Diatonic chords</option>
+        <option value="mixed">Mixed</option>
+      </select>
+    </div>
+    <div>
+      <label for="qualitySelect">Key quality</label>
+      <select id="qualitySelect">
+        <option value="all">All keys</option>
+        <option value="major">Major only</option>
+        <option value="minor">Minor only</option>
+      </select>
+    </div>
+    <div>
+      <label for="keySelect">Specific key</label>
+      <select id="keySelect">
+        <option value="">— any —</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="sync-status" id="syncStatus">Ready — answers will be logged to your sheet</div>
+
+  <div class="wake-section">
+    <button class="wake-switch" id="wakeSwitch" role="switch" aria-checked="false" tabindex="0">
+      <span class="track"><span class="thumb"></span></span>
+      <span class="switch-text" id="wakeText">SCREEN WILL SLEEP</span>
+    </button>
+    <div class="wake-status-line off" id="wakeStatusLine">Inactive — the screen will go to sleep</div>
+  </div>
+
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <div class="round-label" id="roundLabel">Round: <b>0 / 0</b></div>
+
+  <div class="scoreboard">
+    <div>Question <span id="posNum">1</span></div>
+    <div>
+      <span class="score-correct">✓ <span id="correctCount">0</span></span>
+      &nbsp;·&nbsp;
+      <span class="score-wrong">✗ <span id="wrongCount">0</span></span>
+    </div>
+  </div>
+
+  <div class="question-box">
+    <div class="question-label" id="questionLabel">Question</div>
+    <div class="question-text" id="questionText">Loading…</div>
+  </div>
+
+  <div class="tray-label">Your answer</div>
+  <div class="tray" id="tray">
+    <div class="tray-empty" id="trayEmpty">Tap buttons below to build your answer</div>
+  </div>
+
+  <div id="scaleBankArea">
+    <div class="bank-label">Notes (click in scale order)</div>
+    <div class="bank" id="noteBank"></div>
+  </div>
+
+  <div id="chordNameBankArea" style="display:none">
+    <div class="bank-label">Chord names — tap a root to expand, then tap a chord</div>
+    <div class="chord-groups" id="chordGroups"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="action" id="undoBtn" disabled>⌫ Undo</button>
+    <button class="action" id="clearBtn" disabled>Clear</button>
+    <button class="action primary" id="checkBtn" disabled>Check</button>
+  </div>
+
+  <div class="feedback" id="feedback"></div>
+
+  <div class="btn-row">
+    <button class="action ghost" id="showSolutionBtn">💡 Show how to work it out</button>
+    <button class="action ghost" id="skipBtn">Skip →</button>
+  </div>
+
+  <div class="solution" id="solutionPanel">
+    <h3>Worked solution</h3>
+    <div id="solutionContent"></div>
+  </div>
+
+  <div class="bottom-row">
+    <button class="action ghost" id="newQuestionBtn">↻ New question</button>
+    <button class="action ghost" id="resetBtn">↺ Reset score</button>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   GOOGLE SHEET LOGGING (append-only, iframe-safe)
+   ========================================================= */
+const SHEET_URL = 'https://script.google.com/macros/s/AKfyc.../exec';  // ← paste your URL
+const syncStatus = document.getElementById('syncStatus');
+
+function setSyncStatus(text, cls) {
+  syncStatus.textContent = text;
+  syncStatus.className = 'sync-status' + (cls ? ' ' + cls : '');
+}
+
+function logToSheet(payload) {
+  if (!SHEET_URL || SHEET_URL.includes('AKfyc...')) return;
+  fetch(SHEET_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payload)
+  }).then(() => {
+    setSyncStatus('✓ Logged to sheet', 'synced');
+  }).catch(err => {
+    console.warn('Sheet log failed:', err);
+    setSyncStatus('⚠ Could not log to sheet', 'error');
+  });
+}
+
+/* =========================================================
+   WAKE LOCK
+   ========================================================= */
+let wakeLock = null;
+let wakeLockWanted = false;
+let wakeLockPending = false;
+let wakeLockBlocked = false;
+
+const wakeSwitch   = document.getElementById('wakeSwitch');
+const wakeText     = document.getElementById('wakeText');
+const wakeStatusLine = document.getElementById('wakeStatusLine');
+const wakeLockSupported = 'wakeLock' in navigator;
+
+function updateWakeUI() {
+  if (wakeLockBlocked || !wakeLockSupported) {
+    wakeSwitch.classList.remove('on');
+    wakeSwitch.classList.add('disabled');
+    wakeSwitch.setAttribute('aria-checked', 'false');
+    wakeText.textContent = 'KEEP AWAKE UNAVAILABLE';
+    wakeStatusLine.textContent = 'Open this file directly in your browser to use this feature';
+    wakeStatusLine.className = 'wake-status-line unavailable';
+    return;
+  }
+  if (wakeLockPending) {
+    wakeSwitch.classList.remove('on');
+    wakeSwitch.classList.add('disabled');
+    wakeSwitch.setAttribute('aria-checked', 'false');
+    wakeText.textContent = 'TURNING ON…';
+    wakeStatusLine.textContent = 'Working…';
+    wakeStatusLine.className = 'wake-status-line unavailable';
+    return;
+  }
+  wakeSwitch.classList.remove('disabled');
+  if (wakeLock && !wakeLock.released) {
+    wakeSwitch.classList.add('on');
+    wakeSwitch.setAttribute('aria-checked', 'true');
+    wakeText.textContent = 'SCREEN WILL STAY ON';
+    wakeStatusLine.textContent = '✓ Active — the screen will stay on';
+    wakeStatusLine.className = 'wake-status-line on';
+  } else {
+    wakeSwitch.classList.remove('on');
+    wakeSwitch.setAttribute('aria-checked', 'false');
+    wakeText.textContent = 'SCREEN WILL SLEEP';
+    wakeStatusLine.textContent = 'Inactive — the screen will go to sleep';
+    wakeStatusLine.className = 'wake-status-line off';
+  }
+}
+
+async function acquireWakeLock() {
+  if (!wakeLockSupported) return;
+  if (wakeLock && !wakeLock.released) return;
+  if (wakeLockBlocked) return;
+  wakeLockPending = true;
+  updateWakeUI();
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => updateWakeUI());
+  } catch (err) {
+    console.warn('Wake lock request failed:', err);
+    wakeLock = null;
+    if (err.name === 'NotAllowedError' || err.name === 'SecurityError') {
+      wakeLockBlocked = true;
+    }
+    wakeLockWanted = false;
+  }
+  wakeLockPending = false;
+  updateWakeUI();
+}
+
+async function releaseWakeLock() {
+  if (wakeLock && !wakeLock.released) {
+    try { await wakeLock.release(); } catch (e) { console.warn(e); }
+    wakeLock = null;
+  }
+  updateWakeUI();
+}
+
+async function toggleWakeLock() {
+  if (wakeLockPending) return;
+  if (wakeLockBlocked || !wakeLockSupported) return;
+  if (wakeLockWanted) {
+    wakeLockWanted = false;
+    await releaseWakeLock();
+  } else {
+    wakeLockWanted = true;
+    await acquireWakeLock();
+  }
+}
+
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && wakeLockWanted && !wakeLock && !wakeLockBlocked) {
+    await acquireWakeLock();
+  } else {
+    updateWakeUI();
+  }
+});
+
+wakeSwitch.addEventListener('click', toggleWakeLock);
+wakeSwitch.addEventListener('keydown', (e) => {
+  if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggleWakeLock(); }
+});
+updateWakeUI();
+
+/* =========================================================
+   MUSIC THEORY ENGINE
+   ========================================================= */
+const NOTE_TO_PC = {
+  'C':0,'C#':1,'Db':1,'D':2,'D#':3,'Eb':3,'E':4,'Fb':4,'E#':5,
+  'F':5,'F#':6,'Gb':6,'G':7,'G#':8,'Ab':8,'A':9,'A#':10,'Bb':10,
+  'B':11,'Cb':11,'B#':0,
+  'Cx':2,'Dbb':0,'Dx':4,'Ebb':2,'Ex':6,'Fbb':3,
+  'Fx':7,'Gbb':5,'Gx':9,'Abb':7,'Ax':11,'Bbb':9,'Bx':1
+};
+const MAJOR_STEPS = [0,2,4,5,7,9,11];
+const MINOR_STEPS = [0,2,3,5,7,8,10];
+const HARMONIC_MINOR_STEPS = [0,2,3,5,7,8,11];
+const SHARP_ORDER = ['F#','C#','G#','D#','A#','E#','B#'];
+const FLAT_ORDER  = ['Bb','Eb','Ab','Db','Gb','Cb','Fb'];
+
+const MAJOR_KEYS = [
+  { name:'C',   type:'natural', count:0 },
+  { name:'G',   type:'sharp',   count:1 },
+  { name:'D',   type:'sharp',   count:2 },
+  { name:'A',   type:'sharp',   count:3 },
+  { name:'E',   type:'sharp',   count:4 },
+  { name:'B',   type:'sharp',   count:5 },
+  { name:'F#',  type:'sharp',   count:6 },
+  { name:'C#',  type:'sharp',   count:7 },
+  { name:'F',   type:'flat',    count:1 },
+  { name:'Bb',  type:'flat',    count:2 },
+  { name:'Eb',  type:'flat',    count:3 },
+  { name:'Ab',  type:'flat',    count:4 },
+  { name:'Db',  type:'flat',    count:5 },
+  { name:'Gb',  type:'flat',    count:6 },
+  { name:'Cb',  type:'flat',    count:7 }
+];
+
+function relativeMinorOf(majorName) {
+  const map = {
+    'C':'A','G':'E','D':'B','A':'F#','E':'C#','B':'G#','F#':'D#','C#':'A#',
+    'F':'D','Bb':'G','Eb':'C','Ab':'F','Db':'Bb','Gb':'Eb','Cb':'Ab'
+  };
+  return map[majorName];
+}
+function relativeMajorOf(minorName) {
+  const map = {
+    'A':'C','E':'G','B':'D','F#':'A','C#':'E','G#':'B','D#':'F#','A#':'C#',
+    'D':'F','G':'Bb','C':'Eb','F':'Ab','Bb':'Db','Eb':'Gb','Ab':'Cb'
+  };
+  return map[minorName];
+}
+
+function spellNote(letter, targetPc) {
+  const naturalPc = { 'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11 };
+  const natural = naturalPc[letter];
+  const diff = (targetPc - natural + 12) % 12;
+  if (diff === 0) return letter;
+  if (diff === 1) return letter + '#';
+  if (diff === 11) return letter + 'b';
+  if (diff === 2) return letter + 'x';
+  if (diff === 10) return letter + 'bb';
+  return letter;
+}
+
+function buildScaleByLetters(tonicName, steps) {
+  const letters = ['C','D','E','F','G','A','B'];
+  const startIdx = letters.indexOf(tonicName[0]);
+  if (startIdx === -1) return [];
+  const tonicPc = NOTE_TO_PC[tonicName];
+  const notes = [];
+  for (let i = 0; i < steps.length; i++) {
+    const letter = letters[(startIdx + i) % 7];
+    const targetPc = (tonicPc + steps[i]) % 12;
+    notes.push(spellNote(letter, targetPc));
+  }
+  return notes;
+}
+
+function buildMajorScale(t) { return buildScaleByLetters(t, MAJOR_STEPS); }
+function buildMinorScale(t) { return buildScaleByLetters(t, MINOR_STEPS); }
+function buildHarmonicMinorScale(t) { return buildScaleByLetters(t, HARMONIC_MINOR_STEPS); }
+
+function chordQuality(n1, n2, n3) {
+  const p1 = NOTE_TO_PC[n1], p2 = NOTE_TO_PC[n2], p3 = NOTE_TO_PC[n3];
+  if (p1 === undefined || p2 === undefined || p3 === undefined) return 'unknown';
+  const third = (p2 - p1 + 12) % 12;
+  const fifth = (p3 - p1 + 12) % 12;
+  if (third === 4 && fifth === 7) return 'major';
+  if (third === 3 && fifth === 7) return 'minor';
+  if (third === 3 && fifth === 6) return 'diminished';
+  if (third === 4 && fifth === 8) return 'augmented';
+  return 'unknown';
+}
+function romanFor(degreeIndex, quality) {
+  const romans = ['I','II','III','IV','V','VI','VII'];
+  let r = romans[degreeIndex];
+  if (quality === 'minor')      r = r.toLowerCase();
+  if (quality === 'diminished') r = r.toLowerCase() + '°';
+  if (quality === 'augmented')  r = r + '+';
+  return r;
+}
+function buildTriads(scale) {
+  const triads = [];
+  for (let i = 0; i < 7; i++) {
+    const root = scale[i];
+    const third = scale[(i + 2) % 7];
+    const fifth = scale[(i + 4) % 7];
+    const quality = chordQuality(root, third, fifth);
+    triads.push({ degree: i + 1, root, third, fifth, quality, roman: romanFor(i, quality) });
+  }
+  return triads;
+}
+const ALL_MAJOR = MAJOR_KEYS.map(k => k.name);
+const MINOR_KEY_NAMES = [...new Set(MAJOR_KEYS.map(k => relativeMinorOf(k.name) + 'm'))];
+
+function canonicalNote(n) {
+  const pc = NOTE_TO_PC[n];
+  if (pc === undefined) return n;
+  const SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  return SHARP[pc];
+}
+function parseKey(keyStr) {
+  if (keyStr.endsWith('m') && keyStr.length > 1) {
+    return { name: keyStr.slice(0, -1), quality: 'minor' };
+  }
+  return { name: keyStr, quality: 'major' };
+}
+function chordName(t) {
+  if (t.quality === 'major')      return t.root;
+  if (t.quality === 'minor')      return t.root + 'm';
+  if (t.quality === 'diminished') return t.root + 'dim';
+  if (t.quality === 'augmented')  return t.root + 'aug';
+  return t.root + '?';
+}
+
+function generateQuestionFromKeyStr(keyStr, mode) {
+  const { name: tonic, quality } = parseKey(keyStr);
+  const isMinor = quality === 'minor';
+  const scale = isMinor ? buildMinorScale(tonic) : buildMajorScale(tonic);
+  const harmonic = isMinor ? buildHarmonicMinorScale(tonic) : null;
+  const triads = buildTriads(scale);
+  const harmonicTriads = isMinor ? buildTriads(harmonic) : null;
+  if (mode === 'scale') {
+    return {
+      type: 'scale', keyStr, tonic, quality, scale, harmonic, triads, harmonicTriads,
+      question: `What are the notes of the ${tonic} ${isMinor ? 'natural minor' : 'major'} scale?`,
+      answerTokens: scale
+    };
+  } else {
+    return {
+      type: 'chords', keyStr, tonic, quality, scale, harmonic, triads, harmonicTriads,
+      question: `What are the diatonic triads in ${tonic} ${isMinor ? 'minor' : 'major'}?`,
+      answerTokens: triads.map(t => chordName(t))
+    };
+  }
+}
+
+/* =========================================================
+   BUTTON BANKS
+   ========================================================= */
+const NOTE_BANK = [
+  'C','C#','Db','D','D#','Eb','E','E#','Fb','F','F#','Gb',
+  'G','G#','Ab','A','A#','Bb','B','B#','Cb'
+];
+const CHORD_GROUPS = [
+  { letter: 'C', chords: ['C','Cm','Cdim','C#','C#m','C#dim','Cb','Cbm','Cbdim'] },
+  { letter: 'D', chords: ['D','Dm','Ddim','Db','Dbm','Dbdim','D#','D#m','D#dim'] },
+  { letter: 'E', chords: ['E','Em','Edim','Eb','Ebm','Ebdim','E#','E#m','E#dim'] },
+  { letter: 'F', chords: ['F','Fm','Fdim','Fb','Fbm','Fbdim','F#','F#m','F#dim'] },
+  { letter: 'G', chords: ['G','Gm','Gdim','Gb','Gbm','Gbdim','G#','G#m','G#dim'] },
+  { letter: 'A', chords: ['A','Am','Adim','Ab','Abm','Abdim','A#','A#m','A#dim'] },
+  { letter: 'B', chords: ['B','Bm','Bdim','Bb','Bbm','Bbdim','B#','B#m','B#dim'] }
+];
+
+/* =========================================================
+   SHUFFLE BAG
+   ========================================================= */
+let bag = [];
+let bagCursor = 0;
+let bagTotal = 0;
+let bagSignature = '';
+
+function buildPool(qualityFilter, modeFilter) {
+  let keys = [];
+  if (qualityFilter === 'major') keys = ALL_MAJOR.slice();
+  else if (qualityFilter === 'minor') keys = MINOR_KEY_NAMES.slice();
+  else keys = [...ALL_MAJOR, ...MINOR_KEY_NAMES];
+  let modes = [];
+  if (modeFilter === 'scale') modes = ['scale'];
+  else if (modeFilter === 'chords') modes = ['chords'];
+  else modes = ['scale', 'chords'];
+  const pool = [];
+  keys.forEach(k => modes.forEach(m => pool.push({ keyStr: k, mode: m })));
+  return pool;
+}
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function refillBag(qualityFilter, modeFilter) {
+  bag = shuffleArray(buildPool(qualityFilter, modeFilter));
+  bagCursor = 0;
+  bagTotal = bag.length;
+}
+
+function getNextFromBag(qualityFilter, modeFilter, specificKey) {
+  if (specificKey) {
+    let mode = modeFilter;
+    if (mode === 'mixed') mode = Math.random() < 0.5 ? 'scale' : 'chords';
+    return { keyStr: specificKey, mode };
+  }
+  const sig = qualityFilter + '|' + modeFilter;
+  if (sig !== bagSignature) {
+    bagSignature = sig;
+    refillBag(qualityFilter, modeFilter);
+  }
+  if (bag.length === 0) refillBag(qualityFilter, modeFilter);
+  const next = bag.pop();
+  bagCursor++;
+  return next;
+}
+
+/* =========================================================
+   UI STATE
+   ========================================================= */
+const modeSelect     = document.getElementById('modeSelect');
+const qualitySelect  = document.getElementById('qualitySelect');
+const keySelect      = document.getElementById('keySelect');
+const questionLabel  = document.getElementById('questionLabel');
+const questionText   = document.getElementById('questionText');
+const tray           = document.getElementById('tray');
+const scaleBankArea  = document.getElementById('scaleBankArea');
+const noteBank       = document.getElementById('noteBank');
+const chordNameBankArea = document.getElementById('chordNameBankArea');
+const chordGroups    = document.getElementById('chordGroups');
+const undoBtn        = document.getElementById('undoBtn');
+const clearBtn       = document.getElementById('clearBtn');
+const checkBtn       = document.getElementById('checkBtn');
+const feedback       = document.getElementById('feedback');
+const solutionPanel  = document.getElementById('solutionPanel');
+const solutionContent= document.getElementById('solutionContent');
+const showSolutionBtn= document.getElementById('showSolutionBtn');
+const skipBtn        = document.getElementById('skipBtn');
+const newQuestionBtn = document.getElementById('newQuestionBtn');
+const resetBtn       = document.getElementById('resetBtn');
+const posNum         = document.getElementById('posNum');
+const correctCountEl = document.getElementById('correctCount');
+const wrongCountEl   = document.getElementById('wrongCount');
+const progressFill   = document.getElementById('progressFill');
+const roundLabel     = document.getElementById('roundLabel');
+
+let currentQuestion = null;
+let userTokens = [];
+let questionNumber = 0;
+let correct = 0;
+let wrong = 0;
+let answered = false;
+let perPositionResults = [];
+
+function updateScoreUI() {
+  correctCountEl.textContent = correct;
+  wrongCountEl.textContent = wrong;
+  const total = correct + wrong;
+  progressFill.style.width = total ? ((correct / total) * 100) + '%' : '0%';
+}
+
+function updateRoundLabel() {
+  if (!bagTotal) { roundLabel.innerHTML = `Round: <b>0 / 0</b>`; return; }
+  roundLabel.innerHTML = `Round: <b>${bagCursor} / ${bagTotal}</b>`;
+}
+
+function populateKeySelector() {
+  const groupMajor = document.createElement('optgroup');
+  groupMajor.label = 'Major';
+  ALL_MAJOR.forEach(k => {
+    const opt = document.createElement('option');
+    opt.value = k;
+    opt.textContent = k + ' major';
+    groupMajor.appendChild(opt);
+  });
+  const groupMinor = document.createElement('optgroup');
+  groupMinor.label = 'Minor';
+  MINOR_KEY_NAMES.forEach(k => {
+    const opt = document.createElement('option');
+    opt.value = k;
+    opt.textContent = k.slice(0, -1) + ' minor';
+    groupMinor.appendChild(opt);
+  });
+  keySelect.appendChild(groupMajor);
+  keySelect.appendChild(groupMinor);
+}
+
+function renderTray() {
+  tray.innerHTML = '';
+  if (userTokens.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'tray-empty';
+    empty.textContent = 'Tap buttons below to build your answer';
+    tray.appendChild(empty);
+    return;
+  }
+  userTokens.forEach((tok, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'tray-item';
+    if (answered && perPositionResults.length > 0) {
+      chip.classList.add(perPositionResults[i] ? 'correct' : 'wrong');
+    }
+    const chipRow = document.createElement('div');
+    chipRow.className = 'chip-row';
+    const label = document.createElement('span');
+    label.textContent = tok;
+    chipRow.appendChild(label);
+    if (!answered) {
+      const x = document.createElement('span');
+      x.className = 'remove';
+      x.textContent = '×';
+      x.addEventListener('click', () => {
+        userTokens.splice(i, 1);
+        renderTray();
+        updateActionButtons();
+      });
+      chipRow.appendChild(x);
+    }
+    chip.appendChild(chipRow);
+    if (answered && !perPositionResults[i] && currentQuestion) {
+      const correctAnswer = currentQuestion.answerTokens[i];
+      if (correctAnswer) {
+        const ca = document.createElement('div');
+        ca.className = 'correct-answer';
+        ca.textContent = '↓ ' + correctAnswer;
+        chip.appendChild(ca);
+      }
+    }
+    tray.appendChild(chip);
+  });
+}
+
+function renderBanks() {
+  if (!currentQuestion) return;
+  if (currentQuestion.type === 'scale') {
+    scaleBankArea.style.display = '';
+    chordNameBankArea.style.display = 'none';
+    noteBank.innerHTML = '';
+    NOTE_BANK.forEach(n => {
+      const b = document.createElement('button');
+      b.textContent = n;
+      b.disabled = answered;
+      b.addEventListener('click', () => addToken(n));
+      noteBank.appendChild(b);
+    });
+  } else {
+    scaleBankArea.style.display = 'none';
+    chordNameBankArea.style.display = '';
+    chordGroups.innerHTML = '';
+    CHORD_GROUPS.forEach(group => {
+      const groupEl = document.createElement('div');
+      groupEl.className = 'chord-group';
+      const header = document.createElement('button');
+      header.className = 'chord-group-header';
+      header.type = 'button';
+      header.innerHTML = `<span class="root-letter">${group.letter}</span><span class="arrow">▶</span>`;
+      header.addEventListener('click', () => groupEl.classList.toggle('open'));
+      groupEl.appendChild(header);
+      const body = document.createElement('div');
+      body.className = 'chord-group-body';
+      group.chords.forEach(name => {
+        const b = document.createElement('button');
+        b.textContent = name;
+        b.disabled = answered;
+        b.addEventListener('click', () => addToken(name));
+        body.appendChild(b);
+      });
+      groupEl.appendChild(body);
+      chordGroups.appendChild(groupEl);
+    });
+  }
+}
+
+function addToken(tok) {
+  if (answered) return;
+  userTokens.push(tok);
+  renderTray();
+  updateActionButtons();
+  feedback.textContent = '';
+  feedback.className = 'feedback';
+}
+
+function updateActionButtons() {
+  undoBtn.disabled = answered || userTokens.length === 0;
+  clearBtn.disabled = answered || userTokens.length === 0;
+  checkBtn.disabled = answered || userTokens.length === 0;
+}
+
+function newQuestion() {
+  const mode = modeSelect.value;
+  const quality = qualitySelect.value;
+  const specificKey = keySelect.value || null;
+  const draw = getNextFromBag(quality, mode, specificKey);
+  currentQuestion = generateQuestionFromKeyStr(draw.keyStr, draw.mode);
+  questionNumber++;
+  posNum.textContent = questionNumber;
+  questionLabel.textContent = currentQuestion.type === 'scale' ? 'Scale' : 'Chords';
+  questionText.textContent = currentQuestion.question;
+  userTokens = [];
+  perPositionResults = [];
+  answered = false;
+  feedback.textContent = '';
+  feedback.className = 'feedback';
+  solutionPanel.classList.remove('show');
+  updateRoundLabel();
+  renderTray();
+  renderBanks();
+  updateActionButtons();
+}
+
+/* =========================================================
+   ANSWER CHECKING
+   ========================================================= */
+function checkAnswer() {
+  if (answered || !currentQuestion) return;
+  const expected = currentQuestion.answerTokens;
+  if (userTokens.length !== expected.length) {
+    perPositionResults = userTokens.map(() => false);
+    markWrong(`Wrong number of items — expected ${expected.length}, you gave ${userTokens.length}.`);
+    return;
+  }
+  const results = userTokens.map((tok, i) => {
+    if (currentQuestion.type === 'scale') return canonicalNote(tok) === canonicalNote(expected[i]);
+    return canonicalChordName(tok) === canonicalChordName(expected[i]);
+  });
+  perPositionResults = results;
+  const allCorrect = results.every(r => r);
+  const numCorrect = results.filter(r => r).length;
+  if (allCorrect) {
+    markCorrect();
+  } else {
+    const wrongPositions = results.map((r, i) => r ? null : (i + 1)).filter(x => x !== null);
+    let msg;
+    if (numCorrect === 0) msg = `All ${results.length} were wrong.`;
+    else msg = `${numCorrect} of ${results.length} correct. Wrong at position${wrongPositions.length > 1 ? 's' : ''} ${wrongPositions.join(', ')}.`;
+    markWrong(msg);
+  }
+}
+
+function canonicalChordName(name) {
+  let s = name.trim().replace(/♯/g,'#').replace(/♭/g,'b').replace(/min/gi,'m').replace(/dim/gi,'dim').replace(/aug/gi,'aug').replace(/\s+/g,'');
+  if (s.length > 0) s = s[0].toUpperCase() + s.slice(1);
+  s = s.replace(/MINOR/gi,'m').replace(/MAJOR/gi,'');
+  const m = s.match(/^([A-G][#b]?)(.*)$/);
+  if (!m) return s;
+  return canonicalNote(m[1]) + m[2].toLowerCase();
+}
+
+function logAnswer(result) {
+  logToSheet({
+    timestamp: new Date().toISOString(),
+    question: currentQuestion.question,
+    yourAnswer: userTokens.join(' ') || '(none)',
+    correctAnswer: currentQuestion.answerTokens.join(' '),
+    result: result,
+    round: `${bagCursor}/${bagTotal}`
+  });
+}
+
+function markCorrect() {
+  answered = true;
+  correct++;
+  updateScoreUI();
+  feedback.textContent = '✓ All correct!';
+  feedback.className = 'feedback correct';
+  renderTray(); renderBanks(); updateActionButtons();
+  showSolution();
+  logAnswer('correct');
+}
+function markWrong(msg) {
+  answered = true;
+  wrong++;
+  updateScoreUI();
+  feedback.textContent = '✗ ' + msg;
+  feedback.className = 'feedback wrong';
+  renderTray(); renderBanks(); updateActionButtons();
+  showSolution();
+  logAnswer('wrong');
+}
+function skipQuestion() {
+  if (answered) { newQuestion(); return; }
+  answered = true;
+  wrong++;
+  updateScoreUI();
+  perPositionResults = userTokens.map(() => false);
+  feedback.textContent = '— skipped';
+  feedback.className = 'feedback wrong';
+  renderTray(); renderBanks(); updateActionButtons();
+  showSolution();
+  logAnswer('skipped');
+}
+
+/* =========================================================
+   WORKED SOLUTION (explicit about which order is used)
+   ========================================================= */
+function getTheoreticalInfo(question) {
+  const { tonic, quality } = question;
+  const isMinor = quality === 'minor';
+  if (!isMinor) {
+    if (tonic === 'C#') return { isTheoretical: true, twinName: 'Db', twinQuality: 'major', reason: `C# major needs <b>7 sharps</b> (including E# and B#), so it's a theoretical key. The practical spelling is <b>Db major</b>, which uses only <b>5 flats</b> (Bb, Eb, Ab, Db, Gb).` };
+    if (tonic === 'Cb') return { isTheoretical: true, twinName: 'B', twinQuality: 'major', reason: `Cb major needs <b>7 flats</b> (including Cb and Fb), so it's a theoretical key. The practical spelling is <b>B major</b>, which uses only <b>5 sharps</b> (F#, C#, G#, D#, A#).` };
+    return { isTheoretical: false };
+  }
+  if (tonic === 'A#') return { isTheoretical: true, twinName: 'Bb', twinQuality: 'minor', reason: `A# minor needs <b>7 sharps</b> (including B# and E#), so it's a theoretical key. The practical spelling is <b>Bb minor</b>, which uses only <b>5 flats</b> (Bb, Eb, Ab, Db, Gb).` };
+  if (tonic === 'D#') return { isTheoretical: true, twinName: 'Eb', twinQuality: 'minor', reason: `D# minor needs <b>6 sharps</b> plus a double sharp (Cx), so it's a theoretical key. The practical spelling is <b>Eb minor</b>, which uses only <b>6 flats</b> (Bb, Eb, Ab, Db, Gb, Cb).` };
+  if (tonic === 'G#') return { isTheoretical: true, twinName: 'Ab', twinQuality: 'minor', reason: `G# minor needs <b>5 sharps</b> (F#, C#, G#, D#, A#), so it's theoretically valid but rare. The practical spelling in flat-key contexts is <b>Ab minor</b>, which uses <b>7 flats</b>.` };
+  return { isTheoretical: false };
+}
+
+// Returns one of three explicit phrases about which order is used.
+function keyOrderHint(majorKeyName) {
+  const keyInfo = MAJOR_KEYS.find(k => k.name === majorKeyName);
+  if (!keyInfo) return '';
+  if (keyInfo.type === 'natural') return 'uses <b>neither</b> the sharp order nor the flat order';
+  if (keyInfo.type === 'sharp')   return 'uses the <b>order of sharps</b>';
+  return 'uses the <b>order of flats</b>';
+}
+
+// Explicit, self-contained explanation of the key signature.
+function keySignatureExplanation(majorKeyName) {
+  const keyInfo = MAJOR_KEYS.find(k => k.name === majorKeyName);
+  if (!keyInfo) return '';
+
+  const { type, count } = keyInfo;
+
+  // ---- Natural: C major ----
+  if (type === 'natural') {
+    return `<br><span style="color:#5a7a4a">
+      <b>C major uses neither order.</b> It has <b>0 sharps / 0 flats</b> — all natural notes.
+      </span>`;
+  }
+
+  // ---- Sharp keys ----
+  if (type === 'sharp') {
+    let out = `<br><span style="color:#5a7a4a">`;
+    out += `<b>${majorKeyName} major is a sharp key</b>, so we use the <b>order of sharps</b>:<br>`;
+    out += `<span style="font-family:'SF Mono',Consolas,monospace">F# – C# – G# – D# – A# – E# – B#</span><br><br>`;
+    out += `For sharp keys: <b>the key name is the last sharp + a half step up</b>.<br>`;
+    out += `So we count through the sharp order until we reach the sharp whose half-step-up is <code>${majorKeyName}</code>:<br>`;
+
+    for (let i = 0; i < count; i++) {
+      const sharp = SHARP_ORDER[i];
+      const up = halfStepAbove(sharp);
+      const isLast = (i === count - 1);
+      out += `<span style="font-family:'SF Mono',Consolas,monospace;padding-left:1rem;display:inline-block">${sharp}</span>`;
+      if (isLast) {
+        out += ` → half step up = <code>${up}</code> ← the key name <b style="color:#3a6a2a">${majorKeyName}</b> ✔`;
+      } else {
+        out += ` → half step up = ${up}`;
+      }
+      out += `<br>`;
+    }
+
+    out += `<br>So <b>${majorKeyName} major has ${count} sharp${count > 1 ? 's' : ''}</b>: `;
+    out += `<code>${SHARP_ORDER.slice(0, count).join(', ')}</code>.`;
+    out += `</span>`;
+    return out;
+  }
+
+  // ---- F major (1 flat) special case ----
+  if (count === 1) {
+    return `<br><span style="color:#5a7a4a">
+      <b>F major is a flat key</b>, so we use the <b>order of flats</b>:<br>
+      <span style="font-family:'SF Mono',Consolas,monospace">Bb – Eb – Ab – Db – Gb – Cb – Fb</span><br><br>
+      Normally for flat keys, <b>the key name is the second-to-last flat</b>.<br>
+      But with only <b>1 flat</b>, there is no "second-to-last" to apply — so <b>F major is a special case</b>: it takes only the <b>first flat</b>.<br>
+      <span style="font-family:'SF Mono',Consolas,monospace;padding-left:1rem;display:inline-block">Bb ← the first (and only) flat</span><br><br>
+      So <b>F major has 1 flat</b>: <code>Bb</code>.
+      </span>`;
+  }
+
+  // ---- Other flat keys ----
+  let out = `<br><span style="color:#5a7a4a">`;
+  out += `<b>${majorKeyName} major is a flat key</b>, so we use the <b>order of flats</b>:<br>`;
+  out += `<span style="font-family:'SF Mono',Consolas,monospace">Bb – Eb – Ab – Db – Gb – Cb – Fb</span><br><br>`;
+  out += `For flat keys: <b>the key name is the second-to-last flat</b>.<br>`;
+  out += `So we count through the flat order until we reach <code>${majorKeyName}</code>, then add one more:<br>`;
+
+  for (let i = 0; i < count; i++) {
+    const flat = FLAT_ORDER[i];
+    const isKeyName = (flat === majorKeyName);
+    const isLast = (i === count - 1);
+    out += `<span style="font-family:'SF Mono',Consolas,monospace;padding-left:1rem;display:inline-block">${flat}</span>`;
+    if (isKeyName && !isLast) {
+      out += ` ← the key name`;
+    } else if (isLast) {
+      out += ` ← add one more (the last flat)`;
+    }
+    out += `<br>`;
+  }
+
+  out += `<br>So <b>${majorKeyName} major has ${count} flat${count > 1 ? 's' : ''}</b>: `;
+  out += `<code>${FLAT_ORDER.slice(0, count).join(', ')}</code>.`;
+  out += `</span>`;
+  return out;
+}
+
+function halfStepAbove(note) {
+  const map = { 'F#':'G','C#':'D','G#':'A','D#':'E','A#':'B','E#':'F#','B#':'C#','C':'C#','D':'D#','E':'F','F':'F#','G':'G#','A':'A#','B':'C','Db':'D','Eb':'E','Gb':'G','Ab':'A','Bb':'B','Cb':'C','Fb':'F' };
+  return map[note] || note;
+}
+
+function buildChordGrid(triads) {
+  let html = `<table class="roman-grid"><thead><tr>`;
+  triads.forEach(t => { html += `<th>${t.roman}</th>`; });
+  html += `</tr></thead><tbody><tr>`;
+  triads.forEach(t => { html += `<td>${chordName(t)}</td>`; });
+  html += `</tr></tbody></table>`;
+  return html;
+}
+
+function buildKeySolution(tonic, quality) {
+  const isMinor = quality === 'minor';
+  const scale = isMinor ? buildMinorScale(tonic) : buildMajorScale(tonic);
+  const harmonic = isMinor ? buildHarmonicMinorScale(tonic) : null;
+  const triads = buildTriads(scale);
+  const harmonicTriads = isMinor ? buildTriads(harmonic) : null;
+  const relMajor = isMinor ? relativeMajorOf(tonic) : null;
+
+  let html = '';
+  html += `<p><b>To find the diatonic triads in ${tonic} ${isMinor ? 'minor' : 'major'}:</b></p><ol>`;
+
+  if (isMinor) {
+    html += `<li>Relative major: <code>${relMajor}</code> (up a minor 3rd).</li>`;
+    html += `<li><b>Which order is used?</b> The key signature of <code>${tonic} minor</code> is the same as its relative major, <code>${relMajor} major</code> — which ${keyOrderHint(relMajor)}.
+      ${keySignatureExplanation(relMajor)}</li>`;
+    html += `<li>Natural minor scale: <code>${scale.join(' ')}</code>.</li>`;
+    html += `<li>Stack thirds on each scale degree.</li>`;
+    html += `<li>Apply the minor pattern: <b>i, iv, v = minor; III, VI, VII = major; ii° = diminished</b>.</li>`;
+    html += `<li>Optionally raise the 7th (harmonic minor) so that <b>V becomes major</b> and <b>vii° becomes diminished</b>.</li>`;
+  } else {
+    html += `<li><b>Which order is used?</b> <code>${tonic} major</code> ${keyOrderHint(tonic)}.
+      ${keySignatureExplanation(tonic)}</li>`;
+    html += `<li>Major scale: <code>${scale.join(' ')}</code>.</li>`;
+    html += `<li>Stack thirds on each scale degree.</li>`;
+    html += `<li>Apply the major pattern: <b>I, IV, V = major; ii, iii, vi = minor; vii° = diminished</b>.</li>`;
+  }
+  html += `</ol>`;
+
+  html += `<div class="chord-caption">Chords (natural):</div>`;
+  html += buildChordGrid(triads);
+
+  if (isMinor && harmonicTriads) {
+    html += `<div class="chord-caption" style="margin-top:0.7rem">Harmonic minor version (raised 7th):</div>`;
+    html += buildChordGrid(harmonicTriads);
+  }
+  return html;
+}
+
+function buildKeyScaleSolution(tonic, quality) {
+  const isMinor = quality === 'minor';
+  const scale = isMinor ? buildMinorScale(tonic) : buildMajorScale(tonic);
+  const harmonic = isMinor ? buildHarmonicMinorScale(tonic) : null;
+  const relMajor = isMinor ? relativeMajorOf(tonic) : null;
+
+  let html = '';
+  html += `<p><b>To find the ${tonic} ${isMinor ? 'minor' : 'major'} scale:</b></p><ol>`;
+
+  if (isMinor) {
+    html += `<li>Up a minor 3rd from <code>${tonic}</code> → relative major: <code>${relMajor}</code>.</li>`;
+    html += `<li><b>Which order is used?</b> The key signature of <code>${tonic} minor</code> is the same as its relative major, <code>${relMajor} major</code> — which ${keyOrderHint(relMajor)}.
+      ${keySignatureExplanation(relMajor)}</li>`;
+    html += `<li>Write the notes starting on <code>${tonic}</code> (each letter A–G once).</li>`;
+    html += `<li>Verify with the natural-minor formula: <b>W–H–W–W–H–W–W</b>.</li>`;
+  } else {
+    html += `<li><b>Which order is used?</b> <code>${tonic} major</code> ${keyOrderHint(tonic)}.
+      ${keySignatureExplanation(tonic)}</li>`;
+    html += `<li>Write the notes starting on <code>${tonic}</code> (each letter A–G once).</li>`;
+    html += `<li>Verify with the major formula: <b>W–W–H–W–W–W–H</b>.</li>`;
+  }
+  html += `</ol>`;
+
+  html += `<table><tr>`;
+  for (let i = 1; i <= 7; i++) html += `<th>${i}</th>`;
+  html += `</tr><tr>`;
+  scale.forEach(n => { html += `<td><b>${n}</b></td>`; });
+  html += `</tr></table>`;
+
+  if (isMinor && harmonic) {
+    html += `<p style="margin-top:0.6rem"><b>Harmonic minor</b> (raised 7th):</p>`;
+    html += `<table><tr>`;
+    for (let i = 1; i <= 7; i++) html += `<th>${i}</th>`;
+    html += `</tr><tr>`;
+    harmonic.forEach((n, i) => {
+      html += `<td style="${i === 6 ? 'background:#ffe9c4;font-weight:700;' : ''}">${n}</td>`;
+    });
+    html += `</tr></table>`;
+  }
+  return html;
+}
+
+// Reference block now says which order is used for what.
+function buildReferenceBlock() {
+  return `<div style="background:#fff;border:1px solid #e0d9cc;border-radius:8px;padding:0.6rem 0.8rem;margin-bottom:0.7rem;font-size:0.82rem">
+    <b style="color:#8a6f42">Order of sharps:</b>
+    <span style="font-family:'SF Mono',Consolas,monospace">F# – C# – G# – D# – A# – E# – B#</span>
+    <span style="color:#8a7f6c">(used by sharp keys)</span><br>
+    <b style="color:#8a6f42">Order of flats:</b>
+    <span style="font-family:'SF Mono',Consolas,monospace">Bb – Eb – Ab – Db – Gb – Cb – Fb</span>
+    <span style="color:#8a7f6c">(used by flat keys)</span>
+  </div>`;
+}
+
+function buildTheoreticalBox(question) {
+  const info = getTheoreticalInfo(question);
+  if (!info.isTheoretical) return '';
+  return `<div class="theory-box"><span class="theory-title">⚠️ Theoretical key</span>${info.reason}</div>`;
+}
+
+function buildPracticalAlternative(question) {
+  const info = getTheoreticalInfo(question);
+  if (!info.isTheoretical) return '';
+  const { type } = question;
+  const { twinName, twinQuality } = info;
+  let html = `<div class="practical-section"><div class="practical-title">📘 The practical alternative: ${twinName} ${twinQuality}</div>`;
+  if (type === 'scale') html += buildKeyScaleSolution(twinName, twinQuality);
+  else html += buildKeySolution(twinName, twinQuality);
+  html += `</div>`;
+  return html;
+}
+
+function buildSolutionHTML(question) {
+  const { tonic, quality, type } = question;
+  let html = '';
+  html += buildTheoreticalBox(question);
+  html += buildReferenceBlock();
+  if (type === 'scale') {
+    html += buildKeyScaleSolution(tonic, quality);
+    html += buildPracticalAlternative(question);
+  } else {
+    html += buildKeySolution(tonic, quality);
+    html += buildPracticalAlternative(question);
+  }
+  return html;
+}
+
+function showSolution() {
+  if (!currentQuestion) return;
+  solutionContent.innerHTML = buildSolutionHTML(currentQuestion);
+  solutionPanel.classList.add('show');
+}
+
+/* =========================================================
+   EVENTS
+   ========================================================= */
+undoBtn.addEventListener('click', () => {
+  if (answered || userTokens.length === 0) return;
+  userTokens.pop();
+  renderTray();
+  updateActionButtons();
+});
+clearBtn.addEventListener('click', () => {
+  if (answered) return;
+  userTokens = [];
+  renderTray();
+  updateActionButtons();
+});
+checkBtn.addEventListener('click', checkAnswer);
+skipBtn.addEventListener('click', skipQuestion);
+showSolutionBtn.addEventListener('click', showSolution);
+newQuestionBtn.addEventListener('click', newQuestion);
+resetBtn.addEventListener('click', () => {
+  correct = 0; wrong = 0; questionNumber = 0;
+  bag = [];
+  bagCursor = 0;
+  bagTotal = 0;
+  bagSignature = '';
+  updateScoreUI();
+  setSyncStatus('Score reset locally (sheet history is unchanged)', '');
+  newQuestion();
+});
+modeSelect.addEventListener('change', newQuestion);
+qualitySelect.addEventListener('change', newQuestion);
+keySelect.addEventListener('change', newQuestion);
+
+/* =========================================================
+   INIT
+   ========================================================= */
+populateKeySelector();
+updateScoreUI();
+newQuestion();
+</script>
+</body>
+</html>
