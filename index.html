@@ -455,7 +455,6 @@ function relativeMajorOf(minorName) {
   return map[minorName];
 }
 
-/* Explains the Alphabet Rule for the relative major of a given minor key. */
 function relativeMajorAlphabetRule(minorName) {
   const relMajor = relativeMajorOf(minorName);
   if (!relMajor) return '';
@@ -833,14 +832,23 @@ async function saveState(command, extra) {
   }
 }
 
-/* =========================================================
-   DRAW / NEW QUESTION
-   ========================================================= */
-function applyQuestionFromData(qData) {
-  if (!qData || !qData.keyStr || !qData.mode) return false;
-  currentQuestion = generateQuestionFromKeyStr(qData.keyStr, qData.mode);
-  questionLabel.textContent = currentQuestion.type === 'scale' ? 'Scale' : 'Chords';
-  questionText.textContent = currentQuestion.question;
+/* Applies a full state object from the sheet to all local variables
+   and refreshes the UI. This is the single source of truth for
+   adopting state from the sheet. */
+function applyStateFromSheet(state) {
+  correct = state.scoreCorrect || 0;
+  wrong = state.scoreWrong || 0;
+  questionNumber = state.currentQuestionIndex || 0;
+  bag = Array.isArray(state.bag) ? state.bag : [];
+  bagCursor = state.bagCursor || 0;
+  bagTotal = state.bagTotal || 0;
+
+  if (state.currentQuestion && state.currentQuestion.keyStr && state.currentQuestion.mode) {
+    currentQuestion = generateQuestionFromKeyStr(state.currentQuestion.keyStr, state.currentQuestion.mode);
+    questionLabel.textContent = currentQuestion.type === 'scale' ? 'Scale' : 'Chords';
+    questionText.textContent = currentQuestion.question;
+  }
+
   posNum.textContent = questionNumber;
   userTokens = [];
   perPositionResults = [];
@@ -848,13 +856,16 @@ function applyQuestionFromData(qData) {
   feedback.textContent = '';
   feedback.className = 'feedback';
   solutionPanel.classList.remove('show');
+  updateScoreUI();
   updateRoundLabel();
   renderTray();
   renderBanks();
   updateActionButtons();
-  return true;
 }
 
+/* =========================================================
+   NEW QUESTION (manual advance)
+   ========================================================= */
 function newQuestion() {
   const quality = qualitySelect.value;
   const mode = modeSelect.value;
@@ -1269,19 +1280,8 @@ async function initFromSheet() {
     setSyncStatus('Loading from sheet…');
     const state = await fetchStateFromSheet();
 
-    correct = state.scoreCorrect || 0;
-    wrong = state.scoreWrong || 0;
-    questionNumber = state.currentQuestionIndex || 0;
-    bag = Array.isArray(state.bag) ? state.bag : [];
-    bagCursor = state.bagCursor || 0;
-    bagTotal = state.bagTotal || 0;
-    bagSignature = qualitySelect.value + '|' + modeSelect.value;
-
-    updateScoreUI();
-    updateRoundLabel();
-
     if (state.currentQuestion && state.currentQuestion.keyStr && state.currentQuestion.mode) {
-      applyQuestionFromData(state.currentQuestion);
+      applyStateFromSheet(state);
       setSyncStatus('✓ Loaded from sheet', 'synced');
     } else {
       newQuestion();
@@ -1310,19 +1310,7 @@ async function pollForUpdates() {
       : '';
 
     if (sheetScore !== ourScore || sheetQuestionKey !== ourQuestionKey) {
-      correct = state.scoreCorrect || 0;
-      wrong = state.scoreWrong || 0;
-      questionNumber = state.currentQuestionIndex || 0;
-      bag = Array.isArray(state.bag) ? state.bag : [];
-      bagCursor = state.bagCursor || 0;
-      bagTotal = state.bagTotal || 0;
-
-      if (state.currentQuestion && state.currentQuestion.keyStr && state.currentQuestion.mode) {
-        applyQuestionFromData(state.currentQuestion);
-      }
-
-      updateScoreUI();
-      updateRoundLabel();
+      applyStateFromSheet(state);
       setSyncStatus('✓ Synced with sheet', 'synced');
     }
   } catch (err) {
