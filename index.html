@@ -258,17 +258,37 @@ function setSyncStatus(text, cls) {
   syncStatus.className = 'sync-status' + (cls ? ' ' + cls : '');
 }
 
-async function fetchStateFromSheet() {
-  try {
-    const res = await fetch(SHEET_URL, { method: 'GET' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const state = await res.json();
-    if (state.error) throw new Error(state.error);
-    return state;
-  } catch (err) {
-    console.warn('fetchStateFromSheet failed:', err);
-    throw err;
-  }
+function fetchStateFromSheet() {
+  return new Promise((resolve, reject) => {
+    const callbackName = 'ktCallback_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+    const script = document.createElement('script');
+    let done = false;
+
+    window[callbackName] = function(data) {
+      done = true;
+      delete window[callbackName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+      if (data && data.error) reject(new Error(data.error));
+      else resolve(data);
+    };
+
+    script.src = SHEET_URL + (SHEET_URL.includes('?') ? '&' : '?') + 'callback=' + callbackName;
+    script.onerror = function() {
+      if (done) return;
+      delete window[callbackName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+      reject(new Error('Script load error (JSONP)'));
+    };
+
+    document.head.appendChild(script);
+
+    setTimeout(() => {
+      if (done) return;
+      delete window[callbackName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+      reject(new Error('JSONP timeout'));
+    }, 10000);
+  });
 }
 
 async function postToSheet(payload) {
