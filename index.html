@@ -250,7 +250,7 @@
 /* =========================================================
    GOOGLE SHEET LOGGING (append-only, iframe-safe)
    ========================================================= */
-const SHEET_URL = 'https://script.google.com/macros/s/AKfyc.../exec';  // ← paste your URL
+const SHEET_URL = 'https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycbximctLa4BPP6ZPBvWzNI_oYrUSjTz0Ohi0s6NWIkT5LnQavWGOepmOmYG76KLMeE0JBw/exec/exec';  // ← paste your URL
 const syncStatus = document.getElementById('syncStatus');
 
 function setSyncStatus(text, cls) {
@@ -258,19 +258,55 @@ function setSyncStatus(text, cls) {
   syncStatus.className = 'sync-status' + (cls ? ' ' + cls : '');
 }
 
-function logToSheet(payload) {
-  if (!SHEET_URL || SHEET_URL.includes('AKfyc...')) return;
-  fetch(SHEET_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify(payload)
-  }).then(() => {
-    setSyncStatus('✓ Logged to sheet', 'synced');
-  }).catch(err => {
-    console.warn('Sheet log failed:', err);
-    setSyncStatus('⚠ Could not log to sheet', 'error');
-  });
+async function fetchStateFromSheet() {
+  try {
+    const res = await fetch(SHEET_URL, { method: 'GET' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const state = await res.json();
+    if (state.error) throw new Error(state.error);
+    return state;
+  } catch (err) {
+    console.warn('fetchStateFromSheet failed:', err);
+    throw err;
+  }
+}
+
+async function postToSheet(payload) {
+  try {
+    const res = await fetch(SHEET_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return await res.json();
+  } catch (err) {
+    console.warn('postToSheet failed:', err);
+    throw err;
+  }
+}
+
+async function logAnswer(result) {
+  const payload = {
+    command: 'answer',
+    question: currentQuestion.question,
+    yourAnswer: userTokens.join(' ') || '(none)',
+    correctAnswer: currentQuestion.answerTokens.join(' '),
+    result: result,
+    round: `${bagCursor}/${bagTotal}`,
+    currentQuestionIndex: questionNumber,
+    scoreCorrect: correct,
+    scoreWrong: wrong,
+    bag: bag,
+    bagCursor: bagCursor,
+    bagTotal: bagTotal
+  };
+  try {
+    await postToSheet(payload);
+    setSyncStatus('✓ Saved to sheet', 'synced');
+  } catch (err) {
+    setSyncStatus('⚠ Could not save to sheet', 'error');
+  }
 }
 
 /* =========================================================
@@ -831,16 +867,7 @@ function canonicalChordName(name) {
   return canonicalNote(m[1]) + m[2].toLowerCase();
 }
 
-function logAnswer(result) {
-  logToSheet({
-    timestamp: new Date().toISOString(),
-    question: currentQuestion.question,
-    yourAnswer: userTokens.join(' ') || '(none)',
-    correctAnswer: currentQuestion.answerTokens.join(' '),
-    result: result,
-    round: `${bagCursor}/${bagTotal}`
-  });
-}
+
 
 function markCorrect() {
   answered = true;
@@ -1144,14 +1171,20 @@ checkBtn.addEventListener('click', checkAnswer);
 skipBtn.addEventListener('click', skipQuestion);
 showSolutionBtn.addEventListener('click', showSolution);
 newQuestionBtn.addEventListener('click', newQuestion);
-resetBtn.addEventListener('click', () => {
+resetBtn.addEventListener('click', async () => {
+  if (!confirm('Reset the shared score and round for all devices?')) return;
   correct = 0; wrong = 0; questionNumber = 0;
   bag = [];
   bagCursor = 0;
   bagTotal = 0;
   bagSignature = '';
   updateScoreUI();
-  setSyncStatus('Score reset locally (sheet history is unchanged)', '');
+  try {
+    await postToSheet({ command: 'reset' });
+    setSyncStatus('✓ Reset saved to sheet', 'synced');
+  } catch (err) {
+    setSyncStatus('⚠ Could not reset sheet', 'error');
+  }
   newQuestion();
 });
 modeSelect.addEventListener('change', newQuestion);
@@ -1164,6 +1197,51 @@ keySelect.addEventListener('change', newQuestion);
 populateKeySelector();
 updateScoreUI();
 newQuestion();
+
+// Load the last saved state from the sheet on startup
+async function loadStateFromSheet() {
+  try {
+    setSyncStatus('Loading from sheet…');
+    const state = await fetchStateFromSheet();
+    correct = state.scoreCorrect || 0;
+    wrong = state.scoreWrong || 0;
+    questionNumber = state.currentQuestionIndex || 0;
+    bag = Array.isArray(state.bag) ? state.bag : [];
+    bagCursor = state.bagCursor || 0;
+    bagTotal = state.bagTotal || 0;
+    bagSignature = qualitySelect.value + '|' + modeSelect.value;
+    updateScoreUI();
+    updateRoundLabel();
+    setSyncStatus('✓ Loaded from sheet', 'synced');
+  } catch (err) {
+    setSyncStatus('⚠ Could not load from sheet — starting fresh', 'error');
+  }
+}
+loadStateFromSheet();
+
+// Poll the sheet every 15 seconds so other devices' answers show up here
+async function pollForUpdates() {
+  if (document.visibilityState !== 'visible') return;
+  try {
+    const state = await fetchStateFromSheet();
+    const sheetScore = (state.scoreCorrect || 0) + (state.scoreWrong || 0);
+    const ourScore = correct + wrong;
+    if (sheetScore !== ourScore || (state.bagCursor || 0) !== bagCursor) {
+      correct = state.scoreCorrect || 0;
+      wrong = state.scoreWrong || 0;
+      questionNumber = state.currentQuestionIndex || 0;
+      bag = Array.isArray(state.bag) ? state.bag : [];
+      bagCursor = state.bagCursor || 0;
+      bagTotal = state.bagTotal || 0;
+      updateScoreUI();
+      updateRoundLabel();
+      setSyncStatus('✓ Synced with sheet', 'synced');
+    }
+  } catch (err) {
+    // Silent — polling is best-effort
+  }
+}
+setInterval(pollForUpdates, 15000);
 </script>
 </body>
 </html>
