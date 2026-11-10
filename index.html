@@ -250,16 +250,14 @@
 /* =========================================================
    GOOGLE SHEET SYNC (JSONP for reads, fetch for writes)
    ========================================================= */
-
- const SHEET_URL = 'https://script.google.com/macros/s/AKfycbximctLa4BPP6ZPBvWzNI_oYrUSjTz0Ohi0s6NWIkT5LnQavWGOepmOmYG76KLMeE0JBw/exec';
- const syncStatus = document.getElementById('syncStatus');
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbximctLa4BPP6ZPBvWzNI_oYrUSjTz0Ohi0s6NWIkT5LnQavWGOepmOmYG76KLMeE0JBw/exec';
+const syncStatus = document.getElementById('syncStatus');
 
 function setSyncStatus(text, cls) {
   syncStatus.textContent = text;
   syncStatus.className = 'sync-status' + (cls ? ' ' + cls : '');
 }
 
-// JSONP fetch — works from GitHub Pages where fetch() is blocked by CORS
 function fetchStateFromSheet() {
   return new Promise((resolve, reject) => {
     const callbackName = 'ktCallback_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
@@ -295,7 +293,6 @@ function fetchStateFromSheet() {
   });
 }
 
-// Write via POST with no-cors (we don't need to read the response)
 function postToSheet(payload) {
   return fetch(SHEET_URL, {
     method: 'POST',
@@ -804,11 +801,13 @@ function updateActionButtons() {
   checkBtn.disabled = answered || userTokens.length === 0;
 }
 
-function newQuestion() {
-  const mode = modeSelect.value;
-  const quality = qualitySelect.value;
-  const specificKey = keySelect.value || null;
-  const draw = getNextFromBag(quality, mode, specificKey);
+/* Draws the next question from the current bag (or refills if empty). */
+function drawQuestionFromBag() {
+  if (bag.length === 0) {
+    refillBag(qualitySelect.value, modeSelect.value);
+  }
+  const draw = bag.pop();
+  bagCursor++;
   currentQuestion = generateQuestionFromKeyStr(draw.keyStr, draw.mode);
   questionNumber++;
   posNum.textContent = questionNumber;
@@ -824,6 +823,12 @@ function newQuestion() {
   renderTray();
   renderBanks();
   updateActionButtons();
+}
+
+/* Manual "new question" from the button: discards the current question
+   and draws the next one from the bag. */
+function newQuestion() {
+  drawQuestionFromBag();
 }
 
 /* =========================================================
@@ -1214,12 +1219,13 @@ keySelect.addEventListener('change', newQuestion);
    ========================================================= */
 populateKeySelector();
 updateScoreUI();
-newQuestion();
+drawQuestionFromBag();
 
 async function loadStateFromSheet() {
   try {
     setSyncStatus('Loading from sheet…');
     const state = await fetchStateFromSheet();
+
     correct = state.scoreCorrect || 0;
     wrong = state.scoreWrong || 0;
     questionNumber = state.currentQuestionIndex || 0;
@@ -1227,8 +1233,18 @@ async function loadStateFromSheet() {
     bagCursor = state.bagCursor || 0;
     bagTotal = state.bagTotal || 0;
     bagSignature = qualitySelect.value + '|' + modeSelect.value;
+
     updateScoreUI();
     updateRoundLabel();
+
+    // Draw the next question from the restored bag
+    if (bag.length > 0) {
+      drawQuestionFromBag();
+    } else {
+      refillBag(qualitySelect.value, modeSelect.value);
+      drawQuestionFromBag();
+    }
+
     setSyncStatus('✓ Loaded from sheet', 'synced');
   } catch (err) {
     console.warn('loadStateFromSheet failed:', err);
@@ -1243,13 +1259,22 @@ async function pollForUpdates() {
     const state = await fetchStateFromSheet();
     const sheetScore = (state.scoreCorrect || 0) + (state.scoreWrong || 0);
     const ourScore = correct + wrong;
-    if (sheetScore !== ourScore || (state.bagCursor || 0) !== bagCursor) {
+    const sheetCursor = state.bagCursor || 0;
+
+    // If the sheet has a different score or a different bag cursor,
+    // adopt the sheet's state and redraw the question from its bag.
+    if (sheetScore !== ourScore || sheetCursor !== bagCursor) {
       correct = state.scoreCorrect || 0;
       wrong = state.scoreWrong || 0;
       questionNumber = state.currentQuestionIndex || 0;
       bag = Array.isArray(state.bag) ? state.bag : [];
       bagCursor = state.bagCursor || 0;
       bagTotal = state.bagTotal || 0;
+
+      if (bag.length > 0) {
+        drawQuestionFromBag();
+      }
+
       updateScoreUI();
       updateRoundLabel();
       setSyncStatus('✓ Synced with sheet', 'synced');
