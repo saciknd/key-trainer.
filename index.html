@@ -177,7 +177,7 @@
     </div>
   </div>
 
-  <div class="sync-status" id="syncStatus">Ready — answers will be logged to your sheet</div>
+  <div class="sync-status" id="syncStatus">Connecting…</div>
 
   <div class="wake-section">
     <button class="wake-switch" id="wakeSwitch" role="switch" aria-checked="false" tabindex="0">
@@ -242,22 +242,24 @@
 
   <div class="bottom-row">
     <button class="action ghost" id="newQuestionBtn">↻ New question</button>
-    <button class="action ghost" id="resetBtn">↺ Reset score</button>
+    <button class="action ghost" id="resetBtn">↺ Reset (all devices)</button>
   </div>
 </div>
 
 <script>
 /* =========================================================
-   GOOGLE SHEET LOGGING (append-only, iframe-safe)
+   GOOGLE SHEET SYNC (JSONP for reads, fetch for writes)
    ========================================================= */
-const SHEET_URL = 'https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycbximctLa4BPP6ZPBvWzNI_oYrUSjTz0Ohi0s6NWIkT5LnQavWGOepmOmYG76KLMeE0JBw/exec';  // ← paste your URL
-const syncStatus = document.getElementById('syncStatus');
+
+ const SHEET_URL = 'https://script.google.com/macros/s/AKfycbximctLa4BPP6ZPBvWzNI_oYrUSjTz0Ohi0s6NWIkT5LnQavWGOepmOmYG76KLMeE0JBw/exec';
+ const syncStatus = document.getElementById('syncStatus');
 
 function setSyncStatus(text, cls) {
   syncStatus.textContent = text;
   syncStatus.className = 'sync-status' + (cls ? ' ' + cls : '');
 }
 
+// JSONP fetch — works from GitHub Pages where fetch() is blocked by CORS
 function fetchStateFromSheet() {
   return new Promise((resolve, reject) => {
     const callbackName = 'ktCallback_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
@@ -266,7 +268,7 @@ function fetchStateFromSheet() {
 
     window[callbackName] = function(data) {
       done = true;
-      delete window[callbackName];
+      try { delete window[callbackName]; } catch (e) { window[callbackName] = undefined; }
       if (script.parentNode) script.parentNode.removeChild(script);
       if (data && data.error) reject(new Error(data.error));
       else resolve(data);
@@ -275,58 +277,33 @@ function fetchStateFromSheet() {
     script.src = SHEET_URL + (SHEET_URL.includes('?') ? '&' : '?') + 'callback=' + callbackName;
     script.onerror = function() {
       if (done) return;
-      delete window[callbackName];
+      done = true;
+      try { delete window[callbackName]; } catch (e) { window[callbackName] = undefined; }
       if (script.parentNode) script.parentNode.removeChild(script);
-      reject(new Error('Script load error (JSONP)'));
+      reject(new Error('JSONP script load error'));
     };
 
     document.head.appendChild(script);
 
     setTimeout(() => {
       if (done) return;
-      delete window[callbackName];
+      done = true;
+      try { delete window[callbackName]; } catch (e) { window[callbackName] = undefined; }
       if (script.parentNode) script.parentNode.removeChild(script);
       reject(new Error('JSONP timeout'));
     }, 10000);
   });
 }
 
-async function postToSheet(payload) {
-  try {
-    const res = await fetch(SHEET_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    return await res.json();
-  } catch (err) {
-    console.warn('postToSheet failed:', err);
-    throw err;
-  }
-}
-
-async function logAnswer(result) {
-  const payload = {
-    command: 'answer',
-    question: currentQuestion.question,
-    yourAnswer: userTokens.join(' ') || '(none)',
-    correctAnswer: currentQuestion.answerTokens.join(' '),
-    result: result,
-    round: `${bagCursor}/${bagTotal}`,
-    currentQuestionIndex: questionNumber,
-    scoreCorrect: correct,
-    scoreWrong: wrong,
-    bag: bag,
-    bagCursor: bagCursor,
-    bagTotal: bagTotal
-  };
-  try {
-    await postToSheet(payload);
-    setSyncStatus('✓ Saved to sheet', 'synced');
-  } catch (err) {
-    setSyncStatus('⚠ Could not save to sheet', 'error');
-  }
+// Write via POST with no-cors (we don't need to read the response)
+function postToSheet(payload) {
+  return fetch(SHEET_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payload)
+  }).then(() => ({ status: 'ok' }))
+    .catch(err => { throw err; });
 }
 
 /* =========================================================
@@ -887,7 +864,35 @@ function canonicalChordName(name) {
   return canonicalNote(m[1]) + m[2].toLowerCase();
 }
 
+/* =========================================================
+   SHEET SAVE + LOAD
+   ========================================================= */
+function buildAnswerPayload(result) {
+  return {
+    command: 'answer',
+    question: currentQuestion.question,
+    yourAnswer: userTokens.join(' ') || '(none)',
+    correctAnswer: currentQuestion.answerTokens.join(' '),
+    result: result,
+    round: `${bagCursor}/${bagTotal}`,
+    currentQuestionIndex: questionNumber,
+    scoreCorrect: correct,
+    scoreWrong: wrong,
+    bag: bag,
+    bagCursor: bagCursor,
+    bagTotal: bagTotal
+  };
+}
 
+async function saveAnswer(result) {
+  try {
+    await postToSheet(buildAnswerPayload(result));
+    setSyncStatus('✓ Saved to sheet', 'synced');
+  } catch (err) {
+    console.warn('saveAnswer failed:', err);
+    setSyncStatus('⚠ Could not save to sheet', 'error');
+  }
+}
 
 function markCorrect() {
   answered = true;
@@ -897,7 +902,7 @@ function markCorrect() {
   feedback.className = 'feedback correct';
   renderTray(); renderBanks(); updateActionButtons();
   showSolution();
-  logAnswer('correct');
+  saveAnswer('correct');
 }
 function markWrong(msg) {
   answered = true;
@@ -907,7 +912,7 @@ function markWrong(msg) {
   feedback.className = 'feedback wrong';
   renderTray(); renderBanks(); updateActionButtons();
   showSolution();
-  logAnswer('wrong');
+  saveAnswer('wrong');
 }
 function skipQuestion() {
   if (answered) { newQuestion(); return; }
@@ -919,11 +924,11 @@ function skipQuestion() {
   feedback.className = 'feedback wrong';
   renderTray(); renderBanks(); updateActionButtons();
   showSolution();
-  logAnswer('skipped');
+  saveAnswer('skipped');
 }
 
 /* =========================================================
-   WORKED SOLUTION (explicit about which order is used)
+   WORKED SOLUTION
    ========================================================= */
 function getTheoreticalInfo(question) {
   const { tonic, quality } = question;
@@ -939,7 +944,6 @@ function getTheoreticalInfo(question) {
   return { isTheoretical: false };
 }
 
-// Returns one of three explicit phrases about which order is used.
 function keyOrderHint(majorKeyName) {
   const keyInfo = MAJOR_KEYS.find(k => k.name === majorKeyName);
   if (!keyInfo) return '';
@@ -948,21 +952,18 @@ function keyOrderHint(majorKeyName) {
   return 'uses the <b>order of flats</b>';
 }
 
-// Explicit, self-contained explanation of the key signature.
 function keySignatureExplanation(majorKeyName) {
   const keyInfo = MAJOR_KEYS.find(k => k.name === majorKeyName);
   if (!keyInfo) return '';
 
   const { type, count } = keyInfo;
 
-  // ---- Natural: C major ----
   if (type === 'natural') {
     return `<br><span style="color:#5a7a4a">
       <b>C major uses neither order.</b> It has <b>0 sharps / 0 flats</b> — all natural notes.
       </span>`;
   }
 
-  // ---- Sharp keys ----
   if (type === 'sharp') {
     let out = `<br><span style="color:#5a7a4a">`;
     out += `<b>${majorKeyName} major is a sharp key</b>, so we use the <b>order of sharps</b>:<br>`;
@@ -989,7 +990,6 @@ function keySignatureExplanation(majorKeyName) {
     return out;
   }
 
-  // ---- F major (1 flat) special case ----
   if (count === 1) {
     return `<br><span style="color:#5a7a4a">
       <b>F major is a flat key</b>, so we use the <b>order of flats</b>:<br>
@@ -1001,7 +1001,6 @@ function keySignatureExplanation(majorKeyName) {
       </span>`;
   }
 
-  // ---- Other flat keys ----
   let out = `<br><span style="color:#5a7a4a">`;
   out += `<b>${majorKeyName} major is a flat key</b>, so we use the <b>order of flats</b>:<br>`;
   out += `<span style="font-family:'SF Mono',Consolas,monospace">Bb – Eb – Ab – Db – Gb – Cb – Fb</span><br><br>`;
@@ -1121,7 +1120,6 @@ function buildKeyScaleSolution(tonic, quality) {
   return html;
 }
 
-// Reference block now says which order is used for what.
 function buildReferenceBlock() {
   return `<div style="background:#fff;border:1px solid #e0d9cc;border-radius:8px;padding:0.6rem 0.8rem;margin-bottom:0.7rem;font-size:0.82rem">
     <b style="color:#8a6f42">Order of sharps:</b>
@@ -1218,7 +1216,6 @@ populateKeySelector();
 updateScoreUI();
 newQuestion();
 
-// Load the last saved state from the sheet on startup
 async function loadStateFromSheet() {
   try {
     setSyncStatus('Loading from sheet…');
@@ -1234,12 +1231,12 @@ async function loadStateFromSheet() {
     updateRoundLabel();
     setSyncStatus('✓ Loaded from sheet', 'synced');
   } catch (err) {
+    console.warn('loadStateFromSheet failed:', err);
     setSyncStatus('⚠ Could not load from sheet — starting fresh', 'error');
   }
 }
 loadStateFromSheet();
 
-// Poll the sheet every 15 seconds so other devices' answers show up here
 async function pollForUpdates() {
   if (document.visibilityState !== 'visible') return;
   try {
