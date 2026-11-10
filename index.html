@@ -126,6 +126,7 @@
   .feedback { text-align: center; font-weight: 600; font-size: 0.9rem; min-height: 1.3rem; margin-bottom: 0.7rem; }
   .feedback.correct { color: #5b8c4e; }
   .feedback.wrong { color: #b45a4a; }
+  .feedback.partial { color: #b8860b; }
   .solution { display: none; background: #f7f3eb; border: 2px solid #e0d9cc; border-radius: 14px; padding: 1rem 1.1rem; margin-bottom: 0.9rem; font-size: 0.85rem; line-height: 1.5; color: #3f3a33; }
   .solution.show { display: block; }
   .solution h3 { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: #8a7f6c; margin-bottom: 0.5rem; }
@@ -248,7 +249,7 @@
 
 <script>
 /* =========================================================
-   GOOGLE SHEET SYNC (JSONP for reads, fetch for writes)
+   GOOGLE SHEET SYNC
    ========================================================= */
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbximctLa4BPP6ZPBvWzNI_oYrUSjTz0Ohi0s6NWIkT5LnQavWGOepmOmYG76KLMeE0JBw/exec';
 const syncStatus = document.getElementById('syncStatus');
@@ -458,13 +459,11 @@ function relativeMajorOf(minorName) {
 function relativeMajorAlphabetRule(minorName) {
   const relMajor = relativeMajorOf(minorName);
   if (!relMajor) return '';
-
   const startLetter = minorName[0];
   const majorLetter = relMajor[0];
   const letters = ['C','D','E','F','G','A','B'];
   const startIdx = letters.indexOf(startLetter);
   const skippedLetter = letters[(startIdx + 1) % 7];
-
   return `Up a minor 3rd from <code>${minorName}</code>: the letter must skip from <code>${startLetter}</code> past <code>${skippedLetter}</code>, landing on <code>${majorLetter}</code> — so the relative major is <b>${relMajor} major</b> (not its enharmonic twin).`;
 }
 
@@ -708,7 +707,7 @@ function renderTray() {
   userTokens.forEach((tok, i) => {
     const chip = document.createElement('div');
     chip.className = 'tray-item';
-    if (answered && perPositionResults.length > 0) {
+    if (perPositionResults.length > i) {
       chip.classList.add(perPositionResults[i] ? 'correct' : 'wrong');
     }
     const chipRow = document.createElement('div');
@@ -722,13 +721,14 @@ function renderTray() {
       x.textContent = '×';
       x.addEventListener('click', () => {
         userTokens.splice(i, 1);
+        perPositionResults = [];
         renderTray();
         updateActionButtons();
       });
       chipRow.appendChild(x);
     }
     chip.appendChild(chipRow);
-    if (answered && !perPositionResults[i] && currentQuestion) {
+    if (perPositionResults.length > i && !perPositionResults[i] && currentQuestion) {
       const correctAnswer = currentQuestion.answerTokens[i];
       if (correctAnswer) {
         const ca = document.createElement('div');
@@ -785,6 +785,7 @@ function renderBanks() {
 function addToken(tok) {
   if (answered) return;
   userTokens.push(tok);
+  perPositionResults = [];
   renderTray();
   updateActionButtons();
   feedback.textContent = '';
@@ -834,8 +835,6 @@ async function saveState(command, extra) {
   }
 }
 
-/* Applies a full state object from the sheet to all local variables
-   and refreshes the UI, including restoring the answered/review state. */
 function applyStateFromSheet(state) {
   correct = state.scoreCorrect || 0;
   wrong = state.scoreWrong || 0;
@@ -844,19 +843,16 @@ function applyStateFromSheet(state) {
   bagCursor = state.bagCursor || 0;
   bagTotal = state.bagTotal || 0;
 
-  // Rebuild current question if we have one
   if (state.currentQuestion && state.currentQuestion.keyStr && state.currentQuestion.mode) {
     currentQuestion = generateQuestionFromKeyStr(state.currentQuestion.keyStr, state.currentQuestion.mode);
     questionLabel.textContent = currentQuestion.type === 'scale' ? 'Scale' : 'Chords';
     questionText.textContent = currentQuestion.question;
   }
 
-  // Restore the answered/review state
   const wasAnswered = state.currentQuestionAnswered === true;
   const savedTokens = Array.isArray(state.currentAnswerTokens) ? state.currentAnswerTokens : [];
 
   if (wasAnswered && currentQuestion) {
-    // Rebuild the per-position results from the saved tokens
     userTokens = savedTokens.slice();
     const expected = currentQuestion.answerTokens;
     const results = userTokens.map((tok, i) => {
@@ -866,7 +862,6 @@ function applyStateFromSheet(state) {
     perPositionResults = results;
     answered = true;
 
-    // Show a "review" feedback line
     const allCorrect = results.length === expected.length && results.every(r => r);
     const numCorrect = results.filter(r => r).length;
     if (allCorrect) {
@@ -881,11 +876,9 @@ function applyStateFromSheet(state) {
       feedback.className = 'feedback wrong';
     }
 
-    // Open the solution panel
     solutionContent.innerHTML = buildSolutionHTML(currentQuestion);
     solutionPanel.classList.add('show');
   } else {
-    // Not answered — fresh question
     userTokens = [];
     perPositionResults = [];
     answered = false;
@@ -938,23 +931,40 @@ function newQuestion() {
 }
 
 /* =========================================================
-   ANSWER CHECKING
+   ANSWER CHECKING (partial + full)
    ========================================================= */
 function checkAnswer() {
   if (answered || !currentQuestion) return;
   const expected = currentQuestion.answerTokens;
-  if (userTokens.length !== expected.length) {
-    perPositionResults = userTokens.map(() => false);
-    markWrong(`Wrong number of items — expected ${expected.length}, you gave ${userTokens.length}.`);
+
+  // Too many — tell the user to remove some
+  if (userTokens.length > expected.length) {
+    feedback.textContent = `Too many items — expected ${expected.length}, you gave ${userTokens.length}. Remove some to try again.`;
+    feedback.className = 'feedback wrong';
     return;
   }
+
+  // Compare what we have against the first N expected tokens
   const results = userTokens.map((tok, i) => {
     if (currentQuestion.type === 'scale') return canonicalNote(tok) === canonicalNote(expected[i]);
     return canonicalChordName(tok) === canonicalChordName(expected[i]);
   });
   perPositionResults = results;
-  const allCorrect = results.every(r => r);
+
   const numCorrect = results.filter(r => r).length;
+  const numEntered = results.length;
+
+  // Partial — show progress, mark chips, leave the question open
+  if (numEntered < expected.length) {
+    feedback.textContent = `So far: ${numCorrect} of ${numEntered} entered correct. ${expected.length - numEntered} more to go — or press Skip to give up.`;
+    feedback.className = 'feedback partial';
+    renderTray();
+    updateActionButtons();
+    return;
+  }
+
+  // Full — score it
+  const allCorrect = results.every(r => r);
   if (allCorrect) {
     markCorrect();
   } else {
@@ -1275,12 +1285,14 @@ function showSolution() {
 undoBtn.addEventListener('click', () => {
   if (answered || userTokens.length === 0) return;
   userTokens.pop();
+  perPositionResults = [];
   renderTray();
   updateActionButtons();
 });
 clearBtn.addEventListener('click', () => {
   if (answered) return;
   userTokens = [];
+  perPositionResults = [];
   renderTray();
   updateActionButtons();
 });
