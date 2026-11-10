@@ -455,6 +455,20 @@ function relativeMajorOf(minorName) {
   return map[minorName];
 }
 
+/* Explains the Alphabet Rule for the relative major of a given minor key. */
+function relativeMajorAlphabetRule(minorName) {
+  const relMajor = relativeMajorOf(minorName);
+  if (!relMajor) return '';
+
+  const startLetter = minorName[0];
+  const majorLetter = relMajor[0];
+  const letters = ['C','D','E','F','G','A','B'];
+  const startIdx = letters.indexOf(startLetter);
+  const skippedLetter = letters[(startIdx + 1) % 7];
+
+  return `Up a minor 3rd from <code>${minorName}</code>: the letter must skip from <code>${startLetter}</code> past <code>${skippedLetter}</code>, landing on <code>${majorLetter}</code> — so the relative major is <b>${relMajor} major</b> (not its enharmonic twin).`;
+}
+
 function spellNote(letter, targetPc) {
   const naturalPc = { 'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11 };
   const natural = naturalPc[letter];
@@ -823,7 +837,6 @@ async function saveState(command, extra) {
    DRAW / NEW QUESTION
    ========================================================= */
 function applyQuestionFromData(qData) {
-  // qData is { keyStr, mode } — regenerate the full question from that.
   if (!qData || !qData.keyStr || !qData.mode) return false;
   currentQuestion = generateQuestionFromKeyStr(qData.keyStr, qData.mode);
   questionLabel.textContent = currentQuestion.type === 'scale' ? 'Scale' : 'Chords';
@@ -842,7 +855,6 @@ function applyQuestionFromData(qData) {
   return true;
 }
 
-/* Draws the next question from the bag, saves it to the sheet, and shows it. */
 function newQuestion() {
   const quality = qualitySelect.value;
   const mode = modeSelect.value;
@@ -872,7 +884,6 @@ function newQuestion() {
   renderBanks();
   updateActionButtons();
 
-  // Save the new current question + bag to the sheet so other devices follow
   saveState('draw');
 }
 
@@ -966,7 +977,7 @@ function skipQuestion() {
 }
 
 /* =========================================================
-   WORKED SOLUTION (same as before)
+   WORKED SOLUTION
    ========================================================= */
 function getTheoreticalInfo(question) {
   const { tonic, quality } = question;
@@ -1090,7 +1101,7 @@ function buildKeySolution(tonic, quality) {
   html += `<p><b>To find the diatonic triads in ${tonic} ${isMinor ? 'minor' : 'major'}:</b></p><ol>`;
 
   if (isMinor) {
-    html += `<li>Relative major: <code>${relMajor}</code> (up a minor 3rd).</li>`;
+    html += `<li><b>Relative major</b> (up a minor 3rd): ${relativeMajorAlphabetRule(tonic)}</li>`;
     html += `<li><b>Which order is used?</b> The key signature of <code>${tonic} minor</code> is the same as its relative major, <code>${relMajor} major</code> — which ${keyOrderHint(relMajor)}.
       ${keySignatureExplanation(relMajor)}</li>`;
     html += `<li>Natural minor scale: <code>${scale.join(' ')}</code>.</li>`;
@@ -1126,7 +1137,7 @@ function buildKeyScaleSolution(tonic, quality) {
   html += `<p><b>To find the ${tonic} ${isMinor ? 'minor' : 'major'} scale:</b></p><ol>`;
 
   if (isMinor) {
-    html += `<li>Up a minor 3rd from <code>${tonic}</code> → relative major: <code>${relMajor}</code>.</li>`;
+    html += `<li><b>Relative major</b> (up a minor 3rd): ${relativeMajorAlphabetRule(tonic)}</li>`;
     html += `<li><b>Which order is used?</b> The key signature of <code>${tonic} minor</code> is the same as its relative major, <code>${relMajor} major</code> — which ${keyOrderHint(relMajor)}.
       ${keySignatureExplanation(relMajor)}</li>`;
     html += `<li>Write the notes starting on <code>${tonic}</code> (each letter A–G once).</li>`;
@@ -1253,8 +1264,6 @@ keySelect.addEventListener('change', newQuestion);
 populateKeySelector();
 updateScoreUI();
 
-/* On startup, load state from the sheet. If it has a current question,
-   show that; otherwise draw a new one and save it. */
 async function initFromSheet() {
   try {
     setSyncStatus('Loading from sheet…');
@@ -1272,11 +1281,9 @@ async function initFromSheet() {
     updateRoundLabel();
 
     if (state.currentQuestion && state.currentQuestion.keyStr && state.currentQuestion.mode) {
-      // The sheet already has a current question — show it.
       applyQuestionFromData(state.currentQuestion);
       setSyncStatus('✓ Loaded from sheet', 'synced');
     } else {
-      // No current question saved — draw one and save it.
       newQuestion();
       setSyncStatus('✓ Loaded from sheet', 'synced');
     }
@@ -1288,11 +1295,9 @@ async function initFromSheet() {
 }
 initFromSheet();
 
-/* Poll for changes from other devices. If the sheet's current question
-   or score has changed, adopt it and redraw. */
 async function pollForUpdates() {
   if (document.visibilityState !== 'visible') return;
-  if (answered) return; // don't disturb the user mid-review
+  if (answered) return;
   try {
     const state = await fetchStateFromSheet();
     const sheetScore = (state.scoreCorrect || 0) + (state.scoreWrong || 0);
