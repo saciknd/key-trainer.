@@ -613,23 +613,6 @@ function refillBag(qualityFilter, modeFilter) {
   bagTotal = bag.length;
 }
 
-function getNextFromBag(qualityFilter, modeFilter, specificKey) {
-  if (specificKey) {
-    let mode = modeFilter;
-    if (mode === 'mixed') mode = Math.random() < 0.5 ? 'scale' : 'chords';
-    return { keyStr: specificKey, mode };
-  }
-  const sig = qualityFilter + '|' + modeFilter;
-  if (sig !== bagSignature) {
-    bagSignature = sig;
-    refillBag(qualityFilter, modeFilter);
-  }
-  if (bag.length === 0) refillBag(qualityFilter, modeFilter);
-  const next = bag.pop();
-  bagCursor++;
-  return next;
-}
-
 /* =========================================================
    UI STATE
    ========================================================= */
@@ -801,18 +784,51 @@ function updateActionButtons() {
   checkBtn.disabled = answered || userTokens.length === 0;
 }
 
-/* Draws the next question from the current bag (or refills if empty). */
-function drawQuestionFromBag() {
-  if (bag.length === 0) {
-    refillBag(qualitySelect.value, modeSelect.value);
+/* =========================================================
+   STATE SAVE / LOAD
+   ========================================================= */
+function getCurrentQuestionData() {
+  if (!currentQuestion) return null;
+  return {
+    keyStr: currentQuestion.keyStr,
+    mode: currentQuestion.type === 'scale' ? 'scale' : 'chords'
+  };
+}
+
+function buildStatePayload(command, extra) {
+  const qData = getCurrentQuestionData();
+  return Object.assign({
+    command: command,
+    currentQuestionIndex: questionNumber,
+    scoreCorrect: correct,
+    scoreWrong: wrong,
+    bag: bag,
+    bagCursor: bagCursor,
+    bagTotal: bagTotal,
+    currentQuestion: qData || {}
+  }, extra || {});
+}
+
+async function saveState(command, extra) {
+  try {
+    await postToSheet(buildStatePayload(command, extra));
+    setSyncStatus('✓ Saved to sheet', 'synced');
+  } catch (err) {
+    console.warn('saveState failed:', err);
+    setSyncStatus('⚠ Could not save to sheet', 'error');
   }
-  const draw = bag.pop();
-  bagCursor++;
-  currentQuestion = generateQuestionFromKeyStr(draw.keyStr, draw.mode);
-  questionNumber++;
-  posNum.textContent = questionNumber;
+}
+
+/* =========================================================
+   DRAW / NEW QUESTION
+   ========================================================= */
+function applyQuestionFromData(qData) {
+  // qData is { keyStr, mode } — regenerate the full question from that.
+  if (!qData || !qData.keyStr || !qData.mode) return false;
+  currentQuestion = generateQuestionFromKeyStr(qData.keyStr, qData.mode);
   questionLabel.textContent = currentQuestion.type === 'scale' ? 'Scale' : 'Chords';
   questionText.textContent = currentQuestion.question;
+  posNum.textContent = questionNumber;
   userTokens = [];
   perPositionResults = [];
   answered = false;
@@ -823,12 +839,41 @@ function drawQuestionFromBag() {
   renderTray();
   renderBanks();
   updateActionButtons();
+  return true;
 }
 
-/* Manual "new question" from the button: discards the current question
-   and draws the next one from the bag. */
+/* Draws the next question from the bag, saves it to the sheet, and shows it. */
 function newQuestion() {
-  drawQuestionFromBag();
+  const quality = qualitySelect.value;
+  const mode = modeSelect.value;
+  const sig = quality + '|' + mode;
+  if (sig !== bagSignature) {
+    bagSignature = sig;
+    refillBag(quality, mode);
+  }
+  if (bag.length === 0) refillBag(quality, mode);
+
+  const draw = bag.pop();
+  bagCursor++;
+  questionNumber++;
+
+  currentQuestion = generateQuestionFromKeyStr(draw.keyStr, draw.mode);
+  questionLabel.textContent = currentQuestion.type === 'scale' ? 'Scale' : 'Chords';
+  questionText.textContent = currentQuestion.question;
+  posNum.textContent = questionNumber;
+  userTokens = [];
+  perPositionResults = [];
+  answered = false;
+  feedback.textContent = '';
+  feedback.className = 'feedback';
+  solutionPanel.classList.remove('show');
+  updateRoundLabel();
+  renderTray();
+  renderBanks();
+  updateActionButtons();
+
+  // Save the new current question + bag to the sheet so other devices follow
+  saveState('draw');
 }
 
 /* =========================================================
@@ -869,36 +914,6 @@ function canonicalChordName(name) {
   return canonicalNote(m[1]) + m[2].toLowerCase();
 }
 
-/* =========================================================
-   SHEET SAVE + LOAD
-   ========================================================= */
-function buildAnswerPayload(result) {
-  return {
-    command: 'answer',
-    question: currentQuestion.question,
-    yourAnswer: userTokens.join(' ') || '(none)',
-    correctAnswer: currentQuestion.answerTokens.join(' '),
-    result: result,
-    round: `${bagCursor}/${bagTotal}`,
-    currentQuestionIndex: questionNumber,
-    scoreCorrect: correct,
-    scoreWrong: wrong,
-    bag: bag,
-    bagCursor: bagCursor,
-    bagTotal: bagTotal
-  };
-}
-
-async function saveAnswer(result) {
-  try {
-    await postToSheet(buildAnswerPayload(result));
-    setSyncStatus('✓ Saved to sheet', 'synced');
-  } catch (err) {
-    console.warn('saveAnswer failed:', err);
-    setSyncStatus('⚠ Could not save to sheet', 'error');
-  }
-}
-
 function markCorrect() {
   answered = true;
   correct++;
@@ -907,7 +922,13 @@ function markCorrect() {
   feedback.className = 'feedback correct';
   renderTray(); renderBanks(); updateActionButtons();
   showSolution();
-  saveAnswer('correct');
+  saveState('answer', {
+    question: currentQuestion.question,
+    yourAnswer: userTokens.join(' ') || '(none)',
+    correctAnswer: currentQuestion.answerTokens.join(' '),
+    result: 'correct',
+    round: `${bagCursor}/${bagTotal}`
+  });
 }
 function markWrong(msg) {
   answered = true;
@@ -917,7 +938,13 @@ function markWrong(msg) {
   feedback.className = 'feedback wrong';
   renderTray(); renderBanks(); updateActionButtons();
   showSolution();
-  saveAnswer('wrong');
+  saveState('answer', {
+    question: currentQuestion.question,
+    yourAnswer: userTokens.join(' ') || '(none)',
+    correctAnswer: currentQuestion.answerTokens.join(' '),
+    result: 'wrong',
+    round: `${bagCursor}/${bagTotal}`
+  });
 }
 function skipQuestion() {
   if (answered) { newQuestion(); return; }
@@ -929,11 +956,17 @@ function skipQuestion() {
   feedback.className = 'feedback wrong';
   renderTray(); renderBanks(); updateActionButtons();
   showSolution();
-  saveAnswer('skipped');
+  saveState('skip', {
+    question: currentQuestion.question,
+    yourAnswer: userTokens.join(' ') || '(none)',
+    correctAnswer: currentQuestion.answerTokens.join(' '),
+    result: 'skipped',
+    round: `${bagCursor}/${bagTotal}`
+  });
 }
 
 /* =========================================================
-   WORKED SOLUTION
+   WORKED SOLUTION (same as before)
    ========================================================= */
 function getTheoreticalInfo(question) {
   const { tonic, quality } = question;
@@ -1219,9 +1252,10 @@ keySelect.addEventListener('change', newQuestion);
    ========================================================= */
 populateKeySelector();
 updateScoreUI();
-drawQuestionFromBag();
 
-async function loadStateFromSheet() {
+/* On startup, load state from the sheet. If it has a current question,
+   show that; otherwise draw a new one and save it. */
+async function initFromSheet() {
   try {
     setSyncStatus('Loading from sheet…');
     const state = await fetchStateFromSheet();
@@ -1237,33 +1271,40 @@ async function loadStateFromSheet() {
     updateScoreUI();
     updateRoundLabel();
 
-    // Draw the next question from the restored bag
-    if (bag.length > 0) {
-      drawQuestionFromBag();
+    if (state.currentQuestion && state.currentQuestion.keyStr && state.currentQuestion.mode) {
+      // The sheet already has a current question — show it.
+      applyQuestionFromData(state.currentQuestion);
+      setSyncStatus('✓ Loaded from sheet', 'synced');
     } else {
-      refillBag(qualitySelect.value, modeSelect.value);
-      drawQuestionFromBag();
+      // No current question saved — draw one and save it.
+      newQuestion();
+      setSyncStatus('✓ Loaded from sheet', 'synced');
     }
-
-    setSyncStatus('✓ Loaded from sheet', 'synced');
   } catch (err) {
-    console.warn('loadStateFromSheet failed:', err);
+    console.warn('initFromSheet failed:', err);
     setSyncStatus('⚠ Could not load from sheet — starting fresh', 'error');
+    newQuestion();
   }
 }
-loadStateFromSheet();
+initFromSheet();
 
+/* Poll for changes from other devices. If the sheet's current question
+   or score has changed, adopt it and redraw. */
 async function pollForUpdates() {
   if (document.visibilityState !== 'visible') return;
+  if (answered) return; // don't disturb the user mid-review
   try {
     const state = await fetchStateFromSheet();
     const sheetScore = (state.scoreCorrect || 0) + (state.scoreWrong || 0);
     const ourScore = correct + wrong;
-    const sheetCursor = state.bagCursor || 0;
+    const sheetQuestionKey = state.currentQuestion && state.currentQuestion.keyStr
+      ? state.currentQuestion.keyStr + '|' + state.currentQuestion.mode
+      : '';
+    const ourQuestionKey = currentQuestion
+      ? currentQuestion.keyStr + '|' + (currentQuestion.type === 'scale' ? 'scale' : 'chords')
+      : '';
 
-    // If the sheet has a different score or a different bag cursor,
-    // adopt the sheet's state and redraw the question from its bag.
-    if (sheetScore !== ourScore || sheetCursor !== bagCursor) {
+    if (sheetScore !== ourScore || sheetQuestionKey !== ourQuestionKey) {
       correct = state.scoreCorrect || 0;
       wrong = state.scoreWrong || 0;
       questionNumber = state.currentQuestionIndex || 0;
@@ -1271,8 +1312,8 @@ async function pollForUpdates() {
       bagCursor = state.bagCursor || 0;
       bagTotal = state.bagTotal || 0;
 
-      if (bag.length > 0) {
-        drawQuestionFromBag();
+      if (state.currentQuestion && state.currentQuestion.keyStr && state.currentQuestion.mode) {
+        applyQuestionFromData(state.currentQuestion);
       }
 
       updateScoreUI();
