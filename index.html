@@ -818,7 +818,9 @@ function buildStatePayload(command, extra) {
     bag: bag,
     bagCursor: bagCursor,
     bagTotal: bagTotal,
-    currentQuestion: qData || {}
+    currentQuestion: qData || {},
+    answered: answered,
+    answerTokens: userTokens
   }, extra || {});
 }
 
@@ -833,8 +835,7 @@ async function saveState(command, extra) {
 }
 
 /* Applies a full state object from the sheet to all local variables
-   and refreshes the UI. This is the single source of truth for
-   adopting state from the sheet. */
+   and refreshes the UI, including restoring the answered/review state. */
 function applyStateFromSheet(state) {
   correct = state.scoreCorrect || 0;
   wrong = state.scoreWrong || 0;
@@ -843,19 +844,57 @@ function applyStateFromSheet(state) {
   bagCursor = state.bagCursor || 0;
   bagTotal = state.bagTotal || 0;
 
+  // Rebuild current question if we have one
   if (state.currentQuestion && state.currentQuestion.keyStr && state.currentQuestion.mode) {
     currentQuestion = generateQuestionFromKeyStr(state.currentQuestion.keyStr, state.currentQuestion.mode);
     questionLabel.textContent = currentQuestion.type === 'scale' ? 'Scale' : 'Chords';
     questionText.textContent = currentQuestion.question;
   }
 
+  // Restore the answered/review state
+  const wasAnswered = state.currentQuestionAnswered === true;
+  const savedTokens = Array.isArray(state.currentAnswerTokens) ? state.currentAnswerTokens : [];
+
+  if (wasAnswered && currentQuestion) {
+    // Rebuild the per-position results from the saved tokens
+    userTokens = savedTokens.slice();
+    const expected = currentQuestion.answerTokens;
+    const results = userTokens.map((tok, i) => {
+      if (currentQuestion.type === 'scale') return canonicalNote(tok) === canonicalNote(expected[i]);
+      return canonicalChordName(tok) === canonicalChordName(expected[i]);
+    });
+    perPositionResults = results;
+    answered = true;
+
+    // Show a "review" feedback line
+    const allCorrect = results.length === expected.length && results.every(r => r);
+    const numCorrect = results.filter(r => r).length;
+    if (allCorrect) {
+      feedback.textContent = '✓ All correct!';
+      feedback.className = 'feedback correct';
+    } else if (numCorrect === 0) {
+      feedback.textContent = `✗ All ${results.length} were wrong.`;
+      feedback.className = 'feedback wrong';
+    } else {
+      const wrongPositions = results.map((r, i) => r ? null : (i + 1)).filter(x => x !== null);
+      feedback.textContent = `✗ ${numCorrect} of ${results.length} correct. Wrong at position${wrongPositions.length > 1 ? 's' : ''} ${wrongPositions.join(', ')}.`;
+      feedback.className = 'feedback wrong';
+    }
+
+    // Open the solution panel
+    solutionContent.innerHTML = buildSolutionHTML(currentQuestion);
+    solutionPanel.classList.add('show');
+  } else {
+    // Not answered — fresh question
+    userTokens = [];
+    perPositionResults = [];
+    answered = false;
+    feedback.textContent = '';
+    feedback.className = 'feedback';
+    solutionPanel.classList.remove('show');
+  }
+
   posNum.textContent = questionNumber;
-  userTokens = [];
-  perPositionResults = [];
-  answered = false;
-  feedback.textContent = '';
-  feedback.className = 'feedback';
-  solutionPanel.classList.remove('show');
   updateScoreUI();
   updateRoundLabel();
   renderTray();
@@ -1308,8 +1347,9 @@ async function pollForUpdates() {
     const ourQuestionKey = currentQuestion
       ? currentQuestion.keyStr + '|' + (currentQuestion.type === 'scale' ? 'scale' : 'chords')
       : '';
+    const sheetAnswered = state.currentQuestionAnswered === true;
 
-    if (sheetScore !== ourScore || sheetQuestionKey !== ourQuestionKey) {
+    if (sheetScore !== ourScore || sheetQuestionKey !== ourQuestionKey || sheetAnswered !== answered) {
       applyStateFromSheet(state);
       setSyncStatus('✓ Synced with sheet', 'synced');
     }
