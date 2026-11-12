@@ -166,90 +166,18 @@
   .chord-caption { font-size: 0.75rem; color: #8a7f6c; margin-top: 0.15rem; margin-bottom: 0.3rem; font-weight: 600; }
   .bottom-row { display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; }
 
-  /* ---------- Help modal ---------- */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(20, 16, 28, 0.6);
-    display: none;
-    justify-content: center;
-    align-items: flex-start;
-    padding: 1.5rem 1rem;
-    z-index: 100;
-    overflow-y: auto;
-  }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(20, 16, 28, 0.6); display: none; justify-content: center; align-items: flex-start; padding: 1.5rem 1rem; z-index: 100; overflow-y: auto; }
   .modal-overlay.show { display: flex; }
-  .modal-content {
-    background: #fff;
-    border-radius: 16px;
-    max-width: 640px;
-    width: 100%;
-    padding: 1.5rem 1.4rem 1.5rem;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
-    position: relative;
-    line-height: 1.55;
-    color: #3f3a33;
-    margin: auto;
-  }
-  .modal-content h2 {
-    font-size: 1.15rem;
-    color: #3a3a3a;
-    margin-bottom: 1rem;
-    padding-right: 2rem;
-  }
-  .modal-content h3 {
-    font-size: 0.92rem;
-    color: #5a4a32;
-    margin: 1.1rem 0 0.4rem;
-    font-weight: 700;
-  }
-  .modal-content p {
-    font-size: 0.88rem;
-    margin-bottom: 0.5rem;
-    color: #3f3a33;
-  }
-  .modal-content ul, .modal-content ol {
-    margin: 0.4rem 0 0.7rem 1.2rem;
-    font-size: 0.88rem;
-  }
-  .modal-content li {
-    margin-bottom: 0.35rem;
-  }
-  .modal-content code {
-    background: #ece5d8;
-    padding: 0.1rem 0.4rem;
-    border-radius: 4px;
-    font-family: 'SF Mono', Consolas, monospace;
-    font-size: 0.82rem;
-    color: #5a4a32;
-  }
-  .modal-content .modal-close {
-    position: absolute;
-    top: 0.7rem;
-    right: 0.9rem;
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    color: #a09b8f;
-    cursor: pointer;
-    line-height: 1;
-    padding: 0.3rem 0.5rem;
-    font-family: inherit;
-  }
+  .modal-content { background: #fff; border-radius: 16px; max-width: 640px; width: 100%; padding: 1.5rem 1.4rem 1.5rem; box-shadow: 0 20px 50px rgba(0,0,0,0.4); position: relative; line-height: 1.55; color: #3f3a33; margin: auto; }
+  .modal-content h2 { font-size: 1.15rem; color: #3a3a3a; margin-bottom: 1rem; padding-right: 2rem; }
+  .modal-content h3 { font-size: 0.92rem; color: #5a4a32; margin: 1.1rem 0 0.4rem; font-weight: 700; }
+  .modal-content p { font-size: 0.88rem; margin-bottom: 0.5rem; color: #3f3a33; }
+  .modal-content ul, .modal-content ol { margin: 0.4rem 0 0.7rem 1.2rem; font-size: 0.88rem; }
+  .modal-content li { margin-bottom: 0.35rem; }
+  .modal-content code { background: #ece5d8; padding: 0.1rem 0.4rem; border-radius: 4px; font-family: 'SF Mono', Consolas, monospace; font-size: 0.82rem; color: #5a4a32; }
+  .modal-content .modal-close { position: absolute; top: 0.7rem; right: 0.9rem; background: none; border: none; font-size: 1.5rem; color: #a09b8f; cursor: pointer; line-height: 1; padding: 0.3rem 0.5rem; font-family: inherit; }
   .modal-content .modal-close:hover { color: #5a4a32; }
-  .modal-content .modal-ok {
-    display: block;
-    margin: 1.2rem auto 0;
-    background: #b08d57;
-    border: 2px solid #b08d57;
-    color: #fff;
-    font-family: inherit;
-    font-size: 0.9rem;
-    font-weight: 600;
-    padding: 0.55rem 1.5rem;
-    border-radius: 50px;
-    cursor: pointer;
-  }
+  .modal-content .modal-ok { display: block; margin: 1.2rem auto 0; background: #b08d57; border: 2px solid #b08d57; color: #fff; font-family: inherit; font-size: 0.9rem; font-weight: 600; padding: 0.55rem 1.5rem; border-radius: 50px; cursor: pointer; }
   .modal-content .modal-ok:hover { background: #9a7a48; }
 </style>
 </head>
@@ -353,9 +281,6 @@
   </div>
 </div>
 
-<!-- =========================================================
-     HOW IT WORKS MODAL
-     ========================================================= -->
 <div class="modal-overlay" id="helpModal">
   <div class="modal-content">
     <button class="modal-close" id="helpClose" aria-label="Close">×</button>
@@ -376,9 +301,7 @@
     </p>
 
     <h3>Check = submit</h3>
-    <p>
-      Pressing <b>Check</b> commits whatever is in the tray at that moment. It's like handing in an exam paper.
-    </p>
+    <p>Pressing <b>Check</b> commits whatever is in the tray at that moment. It's like handing in an exam paper.</p>
     <ul>
       <li>All seven correct → <b>✓ correct</b>, and the worked solution opens.</li>
       <li>Any wrong or missing → <b>✗ wrong</b>. The chips show your answer colour-coded:
@@ -398,9 +321,7 @@
     </p>
 
     <h3>Skip</h3>
-    <p>
-      Pressing <b>Skip</b> gives up on the current question. It's counted as wrong, and the solution opens.
-    </p>
+    <p>Pressing <b>Skip</b> gives up on the current question. It's counted as wrong, and the solution opens.</p>
 
     <h3>Reading the worked solution</h3>
     <p>
@@ -1580,19 +1501,26 @@ async function initFromSheet() {
 }
 initFromSheet();
 
+/* Poll every 5 seconds. Adopt the sheet's state whenever it differs —
+   including when the other device has moved to a new question while we're
+   mid-review. Only skip the poll if we're reviewing the SAME question
+   (so we don't yank the solution away). */
 async function pollForUpdates() {
   if (document.visibilityState !== 'visible') return;
-  if (answered) return;
   try {
     const state = await fetchStateFromSheet();
-    const sheetScore = (state.scoreCorrect || 0) + (state.scoreWrong || 0);
-    const ourScore = correct + wrong;
     const sheetQuestionKey = state.currentQuestion && state.currentQuestion.keyStr
       ? state.currentQuestion.keyStr + '|' + state.currentQuestion.mode
       : '';
     const ourQuestionKey = currentQuestion
       ? currentQuestion.keyStr + '|' + (currentQuestion.type === 'scale' ? 'scale' : 'chords')
       : '';
+
+    // If we're reviewing this exact question, don't disturb.
+    if (answered && sheetQuestionKey === ourQuestionKey) return;
+
+    const sheetScore = (state.scoreCorrect || 0) + (state.scoreWrong || 0);
+    const ourScore = correct + wrong;
     const sheetAnswered = state.currentQuestionAnswered === true;
     const sheetTokens = Array.isArray(state.currentAnswerTokens) ? state.currentAnswerTokens : [];
     const tokensDiffer = JSON.stringify(sheetTokens) !== JSON.stringify(userTokens);
