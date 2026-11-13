@@ -486,7 +486,6 @@ function renderHistory(rounds) {
     roundsList.appendChild(empty);
     return;
   }
-  // Most recent first
   const reversed = rounds.slice().reverse();
   reversed.forEach(r => {
     const row = document.createElement('div');
@@ -536,7 +535,29 @@ function setSyncStatus(text, cls) {
   syncStatus.className = 'sync-status' + (cls ? ' ' + cls : '');
 }
 
-function fetchStateFromSheet() {
+/* Fetch state via regular fetch() — Apps Script Web Apps with "Anyone" access
+   return CORS headers on the /exec endpoint, so this works from a browser.
+   Falls back to JSONP if fetch fails. */
+async function fetchStateFromSheet() {
+  // Try fetch first
+  try {
+    const res = await fetch(SHEET_URL, { method: 'GET', cache: 'no-store' });
+    if (res.ok) {
+      const text = await res.text();
+      // Apps Script returns JSON, but be defensive
+      const data = JSON.parse(text);
+      if (data && data.error) throw new Error(data.error);
+      return data;
+    }
+    throw new Error('HTTP ' + res.status);
+  } catch (fetchErr) {
+    console.warn('fetch failed, trying JSONP:', fetchErr.message);
+    // Fall back to JSONP
+    return await fetchStateJsonp();
+  }
+}
+
+function fetchStateJsonp() {
   return new Promise((resolve, reject) => {
     const callbackName = 'ktCallback_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
     const script = document.createElement('script');
@@ -945,9 +966,8 @@ let correct = 0;
 let wrong = 0;
 let answered = false;
 let perPositionResults = [];
-let roundDetails = [];      // per-question results for the current round
-let roundComplete = false;  // true when the bag has emptied and the round is over
-let lastRoundsCache = [];   // most recent rounds from the sheet
+let roundDetails = [];
+let roundComplete = false;
 
 function updateScoreUI() {
   correctCountEl.textContent = correct;
@@ -1113,7 +1133,7 @@ function hideFloatingNext() { floatingNextBtn.classList.remove('show'); }
 
 function showRoundCompleteBanner() {
   const bestSoFar = getBestScore();
-  const thisRound = correct;  // correct count for this round
+  const thisRound = correct;
 
   let message = 'Round complete!';
   if (correct >= 27) message = 'Outstanding! You\'ve mastered this set.';
@@ -1192,7 +1212,6 @@ async function saveState(command, extra) {
 }
 
 async function completeRound() {
-  // Save the round details to the sheet
   try {
     await postToSheet({
       command: 'completeRound',
@@ -1206,7 +1225,6 @@ async function completeRound() {
     console.warn('completeRound save failed:', err);
     setSyncStatus('⚠ Could not save round', 'error');
   }
-  // Refresh rounds cache from the sheet so the history is up to date
   try {
     const state = await fetchStateFromSheet();
     if (state.rounds) lastRoundsCache = state.rounds;
@@ -1228,8 +1246,9 @@ function applyStateFromSheet(state) {
   bagTotal = state.bagTotal || 0;
   if (state.rounds) lastRoundsCache = state.rounds;
 
-  // If we've finished the round (bag empty, or questionNumber >= bagTotal), don't draw new
-  roundComplete = (bag.length === 0 && bagTotal > 0 && questionNumber >= bagTotal);
+  // Round complete if we've answered as many as the bag total,
+  // OR if the bag is empty (both should hold).
+  roundComplete = (bagTotal > 0 && questionNumber >= bagTotal);
 
   if (state.currentQuestion && state.currentQuestion.keyStr && state.currentQuestion.mode) {
     currentQuestion = generateQuestionFromKeyStr(state.currentQuestion.keyStr, state.currentQuestion.mode);
@@ -1281,8 +1300,12 @@ function applyStateFromSheet(state) {
     feedback.textContent = '';
     feedback.className = 'feedback';
     solutionPanel.classList.remove('show');
-    hideRoundCompleteBanner();
-    if (!roundComplete) hideFloatingNext();
+    if (roundComplete) {
+      showRoundCompleteBanner();
+    } else {
+      hideRoundCompleteBanner();
+      hideFloatingNext();
+    }
   }
 
   updateScoreUI();
@@ -1300,7 +1323,6 @@ function applyStateFromSheet(state) {
 function newQuestion() {
   hideRoundCompleteBanner();
 
-  // If the round is complete, we need a fresh bag first
   if (roundComplete) {
     bag = [];
     bagCursor = 0;
@@ -1310,7 +1332,7 @@ function newQuestion() {
     wrong = 0;
     roundDetails = [];
     roundComplete = false;
-    bagSignature = '';  // force refill
+    bagSignature = '';
     updateScoreUI();
   }
 
@@ -1414,7 +1436,7 @@ function canonicalChordName(name) {
 }
 
 function maybeFinishRound() {
-  if (bag.length === 0 && bagCursor >= bagTotal && bagTotal > 0) {
+  if (bagTotal > 0 && questionNumber >= bagTotal) {
     roundComplete = true;
     completeRound();
     showRoundCompleteBanner();
@@ -1747,14 +1769,7 @@ checkBtn.addEventListener('click', checkAnswer);
 skipBtn.addEventListener('click', skipQuestion);
 showSolutionBtn.addEventListener('click', showSolution);
 newQuestionBtn.addEventListener('click', newQuestion);
-floatingNextBtn.addEventListener('click', () => {
-  if (roundComplete) {
-    // Treat as "start new round"
-    newQuestion();
-  } else {
-    newQuestion();
-  }
-});
+floatingNextBtn.addEventListener('click', newQuestion);
 resetBtn.addEventListener('click', async () => {
   if (!confirm('Reset the shared score and round for all devices?')) return;
   correct = 0; wrong = 0; questionNumber = 0;
