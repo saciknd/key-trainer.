@@ -148,7 +148,6 @@
   .feedback.correct { color: #5b8c4e; }
   .feedback.wrong { color: #b45a4a; }
 
-  /* Floating Next button — appears after Check/Skip */
   .floating-next {
     position: fixed;
     bottom: 1.5rem;
@@ -1136,6 +1135,7 @@ function newQuestion() {
   feedback.className = 'feedback';
   solutionPanel.classList.remove('show');
   hideFloatingNext();
+  openGroups.clear();
   updateRoundLabel();
   renderTray();
   renderBanks();
