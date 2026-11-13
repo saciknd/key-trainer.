@@ -824,9 +824,7 @@ function updateScoreUI() {
 }
 
 function updatePosNum() {
-  // Question X / Y where Y = X + how many left in the bag
-  const total = questionNumber + bag.length;
-  posNum.textContent = `${questionNumber} / ${total}`;
+  posNum.textContent = `${questionNumber} / ${bagTotal}`;
 }
 
 function populateKeySelector() {
