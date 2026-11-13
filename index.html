@@ -54,6 +54,7 @@
     .modal-content h2 { font-size: 1rem; }
     .modal-content h3 { font-size: 0.85rem; }
     .modal-content p, .modal-content li { font-size: 0.82rem; }
+    .floating-next { font-size: 0.9rem; padding: 0.7rem 1.2rem; bottom: 1rem; right: 0.8rem; }
   }
   h1 { font-size: 1.4rem; text-align: center; color: #3a3a3a; margin-bottom: 0.2rem; }
   .subtitle { text-align: center; font-size: 0.8rem; color: #8a8a8a; margin-bottom: 0.5rem; }
@@ -147,23 +148,30 @@
   .feedback.correct { color: #5b8c4e; }
   .feedback.wrong { color: #b45a4a; }
 
-  /* Next-question bar that appears after Check/Skip */
-  .next-question-bar {
+  /* Floating Next button — appears after Check/Skip */
+  .floating-next {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.2rem;
+    z-index: 50;
     display: none;
-    justify-content: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    margin-bottom: 0.9rem;
-  }
-  .next-question-bar.show { display: flex; }
-  button.action.next-main {
-    background: #5b8c4e;
-    border-color: #3f6a34;
-    color: #fff;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: inherit;
     font-size: 1rem;
-    padding: 0.75rem 2rem;
+    font-weight: 700;
+    padding: 0.85rem 1.5rem;
+    border-radius: 50px;
+    border: 2px solid #3f6a34;
+    background: #5b8c4e;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(91, 140, 78, 0.5), 0 2px 6px rgba(0, 0, 0, 0.15);
+    transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
   }
-  button.action.next-main:hover:not(:disabled) { background: #4f7d43; }
+  .floating-next.show { display: inline-flex; }
+  .floating-next:hover { background: #4f7d43; box-shadow: 0 8px 24px rgba(91, 140, 78, 0.6); }
+  .floating-next:active { transform: scale(0.97); }
 
   .solution { display: none; background: #f7f3eb; border: 2px solid #e0d9cc; border-radius: 14px; padding: 1rem 1.1rem; margin-bottom: 0.9rem; font-size: 0.85rem; line-height: 1.5; color: #3f3a33; }
   .solution.show { display: block; }
@@ -183,7 +191,7 @@
   .roman-grid th { background: #ece5d8; color: #5a4a32; font-weight: 700; padding: 0.45rem 0.3rem; border: 1px solid #e0d9cc; text-align: center; font-size: 1rem; }
   .roman-grid td { background: #fff; color: #4a4030; font-weight: 600; padding: 0.45rem 0.3rem; border: 1px solid #e0d9cc; text-align: center; font-size: 0.9rem; }
   .chord-caption { font-size: 0.75rem; color: #8a7f6c; margin-top: 0.15rem; margin-bottom: 0.3rem; font-weight: 600; }
-  .bottom-row { display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; }
+  .bottom-row { display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; padding-bottom: 4rem; }
 
   .modal-overlay { position: fixed; inset: 0; background: rgba(20, 16, 28, 0.6); display: none; justify-content: center; align-items: flex-start; padding: 1.5rem 1rem; z-index: 100; overflow-y: auto; }
   .modal-overlay.show { display: flex; }
@@ -284,10 +292,6 @@
 
   <div class="feedback" id="feedback"></div>
 
-  <div class="next-question-bar" id="nextQuestionBar">
-    <button class="action next-main" id="nextQuestionBtn">Next question →</button>
-  </div>
-
   <div class="btn-row">
     <button class="action ghost" id="showSolutionBtn">💡 Show how to work it out</button>
     <button class="action ghost" id="skipBtn">Skip →</button>
@@ -303,6 +307,8 @@
     <button class="action ghost" id="resetBtn">↺ Reset (all devices)</button>
   </div>
 </div>
+
+<button class="floating-next" id="floatingNextBtn">Next question →</button>
 
 <div class="modal-overlay" id="helpModal">
   <div class="modal-content">
@@ -334,7 +340,10 @@
         The worked solution opens too.
       </li>
     </ul>
-    <p>You can't edit after Check — but you can read the solution for as long as you like, then press <b>Next question</b>.</p>
+    <p>
+      After Check, a green <b>Next question →</b> button appears in the bottom-right corner of the screen.
+      Tap it whenever you've finished reading — you don't need to scroll.
+    </p>
 
     <h3>New question = submit and advance</h3>
     <p>
@@ -795,8 +804,7 @@ const solutionContent= document.getElementById('solutionContent');
 const showSolutionBtn= document.getElementById('showSolutionBtn');
 const skipBtn        = document.getElementById('skipBtn');
 const newQuestionBtn = document.getElementById('newQuestionBtn');
-const nextQuestionBar= document.getElementById('nextQuestionBar');
-const nextQuestionBtn= document.getElementById('nextQuestionBtn');
+const floatingNextBtn= document.getElementById('floatingNextBtn');
 const resetBtn       = document.getElementById('resetBtn');
 const posNum         = document.getElementById('posNum');
 const correctCountEl = document.getElementById('correctCount');
@@ -971,8 +979,8 @@ function updateActionButtons() {
   checkBtn.disabled = answered || userTokens.length === 0;
 }
 
-function showNextBar() { nextQuestionBar.classList.add('show'); }
-function hideNextBar() { nextQuestionBar.classList.remove('show'); }
+function showFloatingNext() { floatingNextBtn.classList.add('show'); }
+function hideFloatingNext() { floatingNextBtn.classList.remove('show'); }
 
 /* =========================================================
    STATE SAVE / LOAD
@@ -1057,7 +1065,7 @@ function applyStateFromSheet(state) {
 
     solutionContent.innerHTML = buildSolutionHTML(currentQuestion);
     solutionPanel.classList.add('show');
-    showNextBar();
+    showFloatingNext();
   } else {
     userTokens = savedTokens.slice();
     perPositionResults = [];
@@ -1065,7 +1073,7 @@ function applyStateFromSheet(state) {
     feedback.textContent = '';
     feedback.className = 'feedback';
     solutionPanel.classList.remove('show');
-    hideNextBar();
+    hideFloatingNext();
   }
 
   posNum.textContent = questionNumber;
@@ -1127,7 +1135,7 @@ function newQuestion() {
   feedback.textContent = '';
   feedback.className = 'feedback';
   solutionPanel.classList.remove('show');
-  hideNextBar();
+  hideFloatingNext();
   updateRoundLabel();
   renderTray();
   renderBanks();
@@ -1179,15 +1187,6 @@ function canonicalChordName(name) {
   return canonicalNote(m[1]) + m[2].toLowerCase();
 }
 
-function scrollToNextBar() {
-  // Scroll the next-question bar into view so the result + Next button are both visible
-  try {
-    nextQuestionBar.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  } catch (e) {
-    nextQuestionBar.scrollIntoView();
-  }
-}
-
 function markCorrect() {
   answered = true;
   correct++;
@@ -1196,7 +1195,7 @@ function markCorrect() {
   feedback.className = 'feedback correct';
   renderTray(); renderBanks(); updateActionButtons();
   showSolution();
-  showNextBar();
+  showFloatingNext();
   saveState('answer', {
     question: currentQuestion.question,
     yourAnswer: userTokens.join(' ') || '(none)',
@@ -1204,7 +1203,6 @@ function markCorrect() {
     result: 'correct',
     round: `${bagCursor}/${bagTotal}`
   });
-  scrollToNextBar();
 }
 function markWrong(msg) {
   answered = true;
@@ -1214,7 +1212,7 @@ function markWrong(msg) {
   feedback.className = 'feedback wrong';
   renderTray(); renderBanks(); updateActionButtons();
   showSolution();
-  showNextBar();
+  showFloatingNext();
   saveState('answer', {
     question: currentQuestion.question,
     yourAnswer: userTokens.join(' ') || '(none)',
@@ -1222,7 +1220,6 @@ function markWrong(msg) {
     result: 'wrong',
     round: `${bagCursor}/${bagTotal}`
   });
-  scrollToNextBar();
 }
 function skipQuestion() {
   if (answered) { newQuestion(); return; }
@@ -1234,7 +1231,7 @@ function skipQuestion() {
   feedback.className = 'feedback wrong';
   renderTray(); renderBanks(); updateActionButtons();
   showSolution();
-  showNextBar();
+  showFloatingNext();
   saveState('skip', {
     question: currentQuestion.question,
     yourAnswer: userTokens.join(' ') || '(none)',
@@ -1242,7 +1239,6 @@ function skipQuestion() {
     result: 'skipped',
     round: `${bagCursor}/${bagTotal}`
   });
-  scrollToNextBar();
 }
 
 /* =========================================================
@@ -1511,7 +1507,7 @@ checkBtn.addEventListener('click', checkAnswer);
 skipBtn.addEventListener('click', skipQuestion);
 showSolutionBtn.addEventListener('click', showSolution);
 newQuestionBtn.addEventListener('click', newQuestion);
-nextQuestionBtn.addEventListener('click', newQuestion);
+floatingNextBtn.addEventListener('click', newQuestion);
 resetBtn.addEventListener('click', async () => {
   if (!confirm('Reset the shared score and round for all devices?')) return;
   correct = 0; wrong = 0; questionNumber = 0;
