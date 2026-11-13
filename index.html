@@ -31,6 +31,8 @@
     .app { padding: 1rem 0.75rem 1.2rem; border-radius: 12px; }
     h1 { font-size: 1.2rem; }
     .subtitle { font-size: 0.75rem; margin-bottom: 0.5rem; }
+    .top-links { gap: 0.5rem; margin-bottom: 0.9rem; }
+    .top-links button { font-size: 0.68rem; }
     .selectors { gap: 0.35rem; margin-bottom: 0.8rem; }
     .selectors label { font-size: 0.6rem; }
     .selectors select { font-size: 0.8rem; padding: 0.35rem 0.5rem; }
@@ -55,12 +57,20 @@
     .modal-content h3 { font-size: 0.85rem; }
     .modal-content p, .modal-content li { font-size: 0.82rem; }
     .floating-next { font-size: 0.9rem; padding: 0.7rem 1.2rem; bottom: 1rem; right: 0.8rem; }
+    .round-complete-banner { padding: 1rem; }
+    .round-complete-banner .big-score { font-size: 2rem; }
+    .round-complete-banner .celebration { font-size: 1.3rem; }
   }
   h1 { font-size: 1.4rem; text-align: center; color: #3a3a3a; margin-bottom: 0.2rem; }
   .subtitle { text-align: center; font-size: 0.8rem; color: #8a8a8a; margin-bottom: 0.5rem; }
-  .help-link {
-    display: block;
-    text-align: center;
+  .top-links {
+    display: flex;
+    justify-content: center;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.9rem;
+  }
+  .top-links button {
     font-size: 0.72rem;
     color: #8a7f6c;
     background: none;
@@ -69,9 +79,8 @@
     text-decoration: underline;
     font-family: inherit;
     padding: 0;
-    margin: 0 auto 0.9rem;
   }
-  .help-link:hover { color: #5a4a32; }
+  .top-links button:hover { color: #5a4a32; }
   .selectors { display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
   .selectors label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: #8a8172; font-weight: 600; display: block; margin-bottom: 0.2rem; }
   .selectors select { font-family: inherit; font-size: 0.85rem; padding: 0.4rem 0.6rem; border-radius: 8px; border: 2px solid #e0d9cc; background: #fdfaf5; color: #2c2c2c; cursor: pointer; }
@@ -146,6 +155,44 @@
   .feedback.correct { color: #5b8c4e; }
   .feedback.wrong { color: #b45a4a; }
 
+  .round-complete-banner {
+    display: none;
+    background: linear-gradient(135deg, #f5efe1, #ebe2cf);
+    border: 2px solid #d4a043;
+    border-radius: 16px;
+    padding: 1.4rem 1rem;
+    margin-bottom: 1rem;
+    text-align: center;
+    box-shadow: 0 4px 16px rgba(180, 140, 60, 0.15);
+  }
+  .round-complete-banner.show { display: block; }
+  .round-complete-banner .celebration {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #8a6f42;
+    margin-bottom: 0.4rem;
+  }
+  .round-complete-banner .big-score {
+    font-size: 2.6rem;
+    font-weight: 800;
+    color: #5a4a32;
+    line-height: 1;
+    margin: 0.4rem 0;
+  }
+  .round-complete-banner .big-score .sep { color: #b0a08a; font-weight: 400; }
+  .round-complete-banner .message {
+    font-size: 0.92rem;
+    color: #6a5a42;
+    margin-top: 0.4rem;
+    margin-bottom: 0.6rem;
+  }
+  .round-complete-banner .best {
+    font-size: 0.78rem;
+    color: #8a7f6c;
+    margin-bottom: 0.7rem;
+  }
+  .round-complete-banner .btn-row { margin-bottom: 0; }
+
   .floating-next {
     position: fixed;
     bottom: 1.5rem;
@@ -169,6 +216,12 @@
   .floating-next.show { display: inline-flex; }
   .floating-next:hover { background: #4f7d43; box-shadow: 0 8px 24px rgba(91, 140, 78, 0.6); }
   .floating-next:active { transform: scale(0.97); }
+  .floating-next.round-done {
+    background: #b08d57;
+    border-color: #9a7a48;
+    box-shadow: 0 6px 20px rgba(176, 141, 87, 0.5), 0 2px 6px rgba(0, 0, 0, 0.15);
+  }
+  .floating-next.round-done:hover { background: #9a7a48; }
 
   .solution { display: none; background: #f7f3eb; border: 2px solid #e0d9cc; border-radius: 14px; padding: 1rem 1.1rem; margin-bottom: 0.9rem; font-size: 0.85rem; line-height: 1.5; color: #3f3a33; }
   .solution.show { display: block; }
@@ -203,13 +256,27 @@
   .modal-content .modal-close:hover { color: #5a4a32; }
   .modal-content .modal-ok { display: block; margin: 1.2rem auto 0; background: #b08d57; border: 2px solid #b08d57; color: #fff; font-family: inherit; font-size: 0.9rem; font-weight: 600; padding: 0.55rem 1.5rem; border-radius: 50px; cursor: pointer; }
   .modal-content .modal-ok:hover { background: #9a7a48; }
+
+  .rounds-list { display: flex; flex-direction: column; gap: 0.5rem; }
+  .round-row { background: #f7f3eb; border: 1px solid #e0d9cc; border-radius: 10px; padding: 0.6rem 0.8rem; }
+  .round-row .round-score { font-size: 1rem; font-weight: 700; color: #5a4a32; }
+  .round-row .round-score .cor { color: #5b8c4e; }
+  .round-row .round-score .wrg { color: #b45a4a; }
+  .round-row .round-date { font-size: 0.7rem; color: #a09b8f; margin-top: 0.1rem; }
+  .round-row .round-details { font-size: 0.72rem; color: #8a7f6c; margin-top: 0.35rem; line-height: 1.5; }
+  .round-row .round-details .det-ok { color: #5b8c4e; }
+  .round-row .round-details .det-wrong { color: #b45a4a; }
+  .no-rounds { text-align: center; color: #a09b8f; font-size: 0.85rem; font-style: italic; padding: 0.8rem 0; }
 </style>
 </head>
 <body>
 <div class="app">
   <h1>Key Trainer</h1>
   <p class="subtitle">Tap to build your answer — every option is available</p>
-  <button class="help-link" id="helpLink">ℹ️ How it works</button>
+  <div class="top-links">
+    <button id="helpLink">ℹ️ How it works</button>
+    <button id="historyLink">📊 History</button>
+  </div>
 
   <div class="selectors">
     <div>
@@ -287,6 +354,13 @@
 
   <div class="feedback" id="feedback"></div>
 
+  <div class="round-complete-banner" id="roundCompleteBanner">
+    <div class="celebration" id="celebration">🎉</div>
+    <div class="big-score" id="roundBigScore">0 <span class="sep">/</span> 0</div>
+    <div class="message" id="roundMessage">Round complete!</div>
+    <div class="best" id="roundBest"></div>
+  </div>
+
   <div class="btn-row">
     <button class="action ghost" id="showSolutionBtn">💡 Show how to work it out</button>
     <button class="action ghost" id="skipBtn">Skip →</button>
@@ -305,6 +379,7 @@
 
 <button class="floating-next" id="floatingNextBtn">Next question →</button>
 
+<!-- HELP MODAL -->
 <div class="modal-overlay" id="helpModal">
   <div class="modal-content">
     <button class="modal-close" id="helpClose" aria-label="Close">×</button>
@@ -320,81 +395,132 @@
     <h3>Answers sync across devices</h3>
     <p>
       Every chord you add or remove is saved to a Google Sheet. If you have the app open on another device,
-      it will update within about 5 seconds — no refresh needed. So you can start an answer on your phone
-      and finish it on your laptop.
+      it will update within about 5 seconds — no refresh needed.
     </p>
 
     <h3>Check = submit</h3>
-    <p>Pressing <b>Check</b> commits whatever is in the tray at that moment. It's like handing in an exam paper.</p>
+    <p>Pressing <b>Check</b> commits whatever is in the tray at that moment.</p>
     <ul>
       <li>All seven correct → <b>✓ correct</b>, and the worked solution opens.</li>
-      <li>Any wrong or missing → <b>✗ wrong</b>. The chips show your answer colour-coded:
-        <span style="color:#5b8c4e;font-weight:600">green</span> for right,
-        <span style="color:#b45a4a;font-weight:600">red</span> for wrong (with the correct chord underneath),
-        and <span style="color:#a09b8f;font-weight:600">grey dashed</span> for missing (with the correct chord underneath).
-        The worked solution opens too.
-      </li>
+      <li>Any wrong or missing → <b>✗ wrong</b>. Chips show green for right, red for wrong (with the correct chord underneath), and grey dashed for missing.</li>
     </ul>
-    <p>
-      After Check, a green <b>Next question →</b> button appears in the bottom-right corner of the screen.
-      Tap it whenever you've finished reading — you don't need to scroll.
-    </p>
+    <p>After Check, a green <b>Next question →</b> button appears at the bottom-right. Tap it whenever you've finished reading.</p>
 
     <h3>New question = submit and advance</h3>
-    <p>
-      If you press <b>New question</b> without having pressed Check, the current tray is submitted first
-      (scored as wrong if incomplete or wrong, exactly like Check), and then the next question is drawn.
-      <b>The solution does not open</b> in this case — you're moving on, not reviewing.
-    </p>
+    <p>If you press <b>New question</b> without having pressed Check, the tray is submitted first and then the next question is drawn. The solution does not open in this case.</p>
 
     <h3>Skip</h3>
     <p>Pressing <b>Skip</b> gives up on the current question. It's counted as wrong, and the solution opens.</p>
 
-    <h3>Reading the worked solution</h3>
-    <p>
-      The solution panel explains how to work out the answer step by step — the key signature, which order
-      of sharps or flats applies, the scale, and the chord grid. For minor keys it also shows the
-      <b>Alphabet Rule</b> for finding the relative major, and for theoretical keys (like C# major or Cb major)
-      it shows the practical enharmonic alternative.
-    </p>
-
-    <h3>Unfinished questions</h3>
-    <p>
-      Once you press Check or New question, that question is behind you for this round — you can't come back
-      and edit it. The round re-shuffles after all keys have been drawn once.
-    </p>
+    <h3>Round complete</h3>
+    <p>After all 30 questions have been drawn, you'll see a <b>Round complete</b> message with your score, plus a <b>Start new round</b> button. Each round's score is saved so you can see your history and compare.</p>
 
     <h3>Reset</h3>
-    <p>
-      <b>Reset (all devices)</b> clears the shared score and round on every device. Your answer history in
-      the Google Sheet is kept.
-    </p>
+    <p><b>Reset (all devices)</b> clears the shared score and round on every device. Your answer history is kept.</p>
 
     <button class="modal-ok" id="helpOk">Got it</button>
   </div>
 </div>
 
+<!-- HISTORY MODAL -->
+<div class="modal-overlay" id="historyModal">
+  <div class="modal-content">
+    <button class="modal-close" id="historyClose" aria-label="Close">×</button>
+    <h2>Round history</h2>
+    <p style="font-size:0.82rem;color:#8a7f6c;margin-bottom:1rem;">Past completed rounds, most recent first.</p>
+    <div class="rounds-list" id="roundsList">
+      <div class="no-rounds">No completed rounds yet.</div>
+    </div>
+    <button class="modal-ok" id="historyOk">Close</button>
+  </div>
+</div>
+
 <script>
 /* =========================================================
-   HELP MODAL
+   MODALS
    ========================================================= */
 const helpLink = document.getElementById('helpLink');
 const helpModal = document.getElementById('helpModal');
 const helpClose = document.getElementById('helpClose');
 const helpOk = document.getElementById('helpOk');
 
+const historyLink = document.getElementById('historyLink');
+const historyModal = document.getElementById('historyModal');
+const historyClose = document.getElementById('historyClose');
+const historyOk = document.getElementById('historyOk');
+const roundsList = document.getElementById('roundsList');
+
+let lastRoundsCache = [];
+
 function openHelp() { helpModal.classList.add('show'); }
 function closeHelp() { helpModal.classList.remove('show'); }
+function openHistory() {
+  renderHistory(lastRoundsCache);
+  historyModal.classList.add('show');
+}
+function closeHistory() { historyModal.classList.remove('show'); }
 
 helpLink.addEventListener('click', openHelp);
 helpClose.addEventListener('click', closeHelp);
 helpOk.addEventListener('click', closeHelp);
-helpModal.addEventListener('click', (e) => {
-  if (e.target === helpModal) closeHelp();
-});
+helpModal.addEventListener('click', (e) => { if (e.target === helpModal) closeHelp(); });
+
+historyLink.addEventListener('click', openHistory);
+historyClose.addEventListener('click', closeHistory);
+historyOk.addEventListener('click', closeHistory);
+historyModal.addEventListener('click', (e) => { if (e.target === historyModal) closeHistory(); });
+
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && helpModal.classList.contains('show')) closeHelp();
+  if (e.key === 'Escape') {
+    if (helpModal.classList.contains('show')) closeHelp();
+    if (historyModal.classList.contains('show')) closeHistory();
+  }
 });
+
+function renderHistory(rounds) {
+  roundsList.innerHTML = '';
+  if (!rounds || rounds.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'no-rounds';
+    empty.textContent = 'No completed rounds yet.';
+    roundsList.appendChild(empty);
+    return;
+  }
+  // Most recent first
+  const reversed = rounds.slice().reverse();
+  reversed.forEach(r => {
+    const row = document.createElement('div');
+    row.className = 'round-row';
+
+    const score = document.createElement('div');
+    score.className = 'round-score';
+    score.innerHTML = `<span class="cor">✓ ${r.correct}</span> · <span class="wrg">✗ ${r.wrong}</span> <span style="color:#8a7f6c;font-weight:400;font-size:0.8rem;">of ${r.total}</span>`;
+    row.appendChild(score);
+
+    const date = document.createElement('div');
+    date.className = 'round-date';
+    if (r.timestamp) {
+      const d = new Date(r.timestamp);
+      date.textContent = d.toLocaleDateString() + ' · ' + d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    }
+    row.appendChild(date);
+
+    if (Array.isArray(r.details) && r.details.length > 0) {
+      const det = document.createElement('div');
+      det.className = 'round-details';
+      r.details.forEach((d, i) => {
+        const span = document.createElement('span');
+        span.className = d.correct ? 'det-ok' : 'det-wrong';
+        span.textContent = (d.correct ? '✓' : '✗') + ' ' + (d.key || '?');
+        det.appendChild(span);
+        if (i < r.details.length - 1) det.appendChild(document.createTextNode(' · '));
+      });
+      row.appendChild(det);
+    }
+
+    roundsList.appendChild(row);
+  });
+}
 
 /* =========================================================
    GOOGLE SHEET SYNC
@@ -806,6 +932,11 @@ const posNum         = document.getElementById('posNum');
 const correctCountEl = document.getElementById('correctCount');
 const wrongCountEl   = document.getElementById('wrongCount');
 const progressFill   = document.getElementById('progressFill');
+const roundCompleteBanner = document.getElementById('roundCompleteBanner');
+const celebrationEl  = document.getElementById('celebration');
+const roundBigScore  = document.getElementById('roundBigScore');
+const roundMessage   = document.getElementById('roundMessage');
+const roundBest      = document.getElementById('roundBest');
 
 let currentQuestion = null;
 let userTokens = [];
@@ -814,6 +945,9 @@ let correct = 0;
 let wrong = 0;
 let answered = false;
 let perPositionResults = [];
+let roundDetails = [];      // per-question results for the current round
+let roundComplete = false;  // true when the bag has emptied and the round is over
+let lastRoundsCache = [];   // most recent rounds from the sheet
 
 function updateScoreUI() {
   correctCountEl.textContent = correct;
@@ -920,7 +1054,7 @@ function renderBanks() {
     NOTE_BANK.forEach(n => {
       const b = document.createElement('button');
       b.textContent = n;
-      b.disabled = answered;
+      b.disabled = answered || roundComplete;
       b.addEventListener('click', () => addToken(n));
       noteBank.appendChild(b);
     });
@@ -947,7 +1081,7 @@ function renderBanks() {
       group.chords.forEach(name => {
         const b = document.createElement('button');
         b.textContent = name;
-        b.disabled = answered;
+        b.disabled = answered || roundComplete;
         b.addEventListener('click', () => addToken(name));
         body.appendChild(b);
       });
@@ -958,7 +1092,7 @@ function renderBanks() {
 }
 
 function addToken(tok) {
-  if (answered) return;
+  if (answered || roundComplete) return;
   userTokens.push(tok);
   perPositionResults = [];
   renderTray();
@@ -969,13 +1103,55 @@ function addToken(tok) {
 }
 
 function updateActionButtons() {
-  undoBtn.disabled = answered || userTokens.length === 0;
-  clearBtn.disabled = answered || userTokens.length === 0;
-  checkBtn.disabled = answered || userTokens.length === 0;
+  undoBtn.disabled = answered || roundComplete || userTokens.length === 0;
+  clearBtn.disabled = answered || roundComplete || userTokens.length === 0;
+  checkBtn.disabled = answered || roundComplete || userTokens.length === 0;
 }
 
 function showFloatingNext() { floatingNextBtn.classList.add('show'); }
 function hideFloatingNext() { floatingNextBtn.classList.remove('show'); }
+
+function showRoundCompleteBanner() {
+  const bestSoFar = getBestScore();
+  const thisRound = correct;  // correct count for this round
+
+  let message = 'Round complete!';
+  if (correct >= 27) message = 'Outstanding! You\'ve mastered this set.';
+  else if (correct >= 24) message = 'Excellent work!';
+  else if (correct >= 20) message = 'Good effort — well done.';
+  else if (correct >= 15) message = 'Solid progress. Keep going!';
+  else message = 'Keep practising — you\'ll get there.';
+
+  celebrationEl.textContent = correct >= 24 ? '🎉' : (correct >= 15 ? '👏' : '💪');
+  roundBigScore.innerHTML = `<span class="cor" style="color:#5b8c4e">${correct}</span> <span class="sep">/</span> ${bagTotal}`;
+  roundMessage.textContent = message;
+
+  if (bestSoFar > 0) {
+    if (thisRound >= bestSoFar && thisRound > 0) {
+      roundBest.textContent = `🏆 New best! (previous best: ${bestSoFar})`;
+    } else {
+      roundBest.textContent = `Best so far: ${bestSoFar}`;
+    }
+  } else {
+    roundBest.textContent = '';
+  }
+
+  roundCompleteBanner.classList.add('show');
+  hideFloatingNext();
+}
+
+function hideRoundCompleteBanner() {
+  roundCompleteBanner.classList.remove('show');
+}
+
+function getBestScore() {
+  if (!lastRoundsCache || lastRoundsCache.length === 0) return 0;
+  let best = 0;
+  lastRoundsCache.forEach(r => {
+    if (r.correct > best) best = r.correct;
+  });
+  return best;
+}
 
 /* =========================================================
    STATE SAVE / LOAD
@@ -1015,6 +1191,28 @@ async function saveState(command, extra) {
   }
 }
 
+async function completeRound() {
+  // Save the round details to the sheet
+  try {
+    await postToSheet({
+      command: 'completeRound',
+      correct: correct,
+      wrong: wrong,
+      total: bagTotal,
+      details: roundDetails
+    });
+    setSyncStatus('✓ Round complete saved', 'synced');
+  } catch (err) {
+    console.warn('completeRound save failed:', err);
+    setSyncStatus('⚠ Could not save round', 'error');
+  }
+  // Refresh rounds cache from the sheet so the history is up to date
+  try {
+    const state = await fetchStateFromSheet();
+    if (state.rounds) lastRoundsCache = state.rounds;
+  } catch (err) { /* silent */ }
+}
+
 function applyStateFromSheet(state) {
   const prevKey = currentQuestion ? currentQuestion.keyStr + '|' + currentQuestion.type : '';
   const nextKey = state.currentQuestion && state.currentQuestion.keyStr
@@ -1028,6 +1226,10 @@ function applyStateFromSheet(state) {
   bag = Array.isArray(state.bag) ? state.bag : [];
   bagCursor = state.bagCursor || 0;
   bagTotal = state.bagTotal || 0;
+  if (state.rounds) lastRoundsCache = state.rounds;
+
+  // If we've finished the round (bag empty, or questionNumber >= bagTotal), don't draw new
+  roundComplete = (bag.length === 0 && bagTotal > 0 && questionNumber >= bagTotal);
 
   if (state.currentQuestion && state.currentQuestion.keyStr && state.currentQuestion.mode) {
     currentQuestion = generateQuestionFromKeyStr(state.currentQuestion.keyStr, state.currentQuestion.mode);
@@ -1066,7 +1268,12 @@ function applyStateFromSheet(state) {
 
     solutionContent.innerHTML = buildSolutionHTML(currentQuestion);
     solutionPanel.classList.add('show');
-    showFloatingNext();
+
+    if (roundComplete) {
+      showRoundCompleteBanner();
+    } else {
+      showFloatingNext();
+    }
   } else {
     userTokens = savedTokens.slice();
     perPositionResults = [];
@@ -1074,7 +1281,8 @@ function applyStateFromSheet(state) {
     feedback.textContent = '';
     feedback.className = 'feedback';
     solutionPanel.classList.remove('show');
-    hideFloatingNext();
+    hideRoundCompleteBanner();
+    if (!roundComplete) hideFloatingNext();
   }
 
   updateScoreUI();
@@ -1090,6 +1298,22 @@ function applyStateFromSheet(state) {
    NEW QUESTION
    ========================================================= */
 function newQuestion() {
+  hideRoundCompleteBanner();
+
+  // If the round is complete, we need a fresh bag first
+  if (roundComplete) {
+    bag = [];
+    bagCursor = 0;
+    bagTotal = 0;
+    questionNumber = 0;
+    correct = 0;
+    wrong = 0;
+    roundDetails = [];
+    roundComplete = false;
+    bagSignature = '';  // force refill
+    updateScoreUI();
+  }
+
   if (!answered && currentQuestion && userTokens.length > 0) {
     answered = true;
     wrong++;
@@ -1150,7 +1374,7 @@ function newQuestion() {
    ANSWER CHECKING
    ========================================================= */
 function checkAnswer() {
-  if (answered || !currentQuestion) return;
+  if (answered || !currentQuestion || roundComplete) return;
   if (userTokens.length === 0) {
     feedback.textContent = 'Enter at least one chord, or press Skip.';
     feedback.className = 'feedback wrong';
@@ -1189,15 +1413,25 @@ function canonicalChordName(name) {
   return canonicalNote(m[1]) + m[2].toLowerCase();
 }
 
+function maybeFinishRound() {
+  if (bag.length === 0 && bagCursor >= bagTotal && bagTotal > 0) {
+    roundComplete = true;
+    completeRound();
+    showRoundCompleteBanner();
+    return true;
+  }
+  return false;
+}
+
 function markCorrect() {
   answered = true;
   correct++;
+  roundDetails.push({ key: currentQuestion.tonic + (currentQuestion.quality === 'minor' ? 'm' : ''), correct: true });
   updateScoreUI();
   feedback.textContent = '✓ All correct!';
   feedback.className = 'feedback correct';
   renderTray(); renderBanks(); updateActionButtons();
   showSolution();
-  showFloatingNext();
   saveState('answer', {
     question: currentQuestion.question,
     yourAnswer: userTokens.join(' ') || '(none)',
@@ -1205,16 +1439,17 @@ function markCorrect() {
     result: 'correct',
     round: `${bagCursor}/${bagTotal}`
   });
+  if (!maybeFinishRound()) showFloatingNext();
 }
 function markWrong(msg) {
   answered = true;
   wrong++;
+  roundDetails.push({ key: currentQuestion.tonic + (currentQuestion.quality === 'minor' ? 'm' : ''), correct: false });
   updateScoreUI();
   feedback.textContent = '✗ ' + msg;
   feedback.className = 'feedback wrong';
   renderTray(); renderBanks(); updateActionButtons();
   showSolution();
-  showFloatingNext();
   saveState('answer', {
     question: currentQuestion.question,
     yourAnswer: userTokens.join(' ') || '(none)',
@@ -1222,18 +1457,20 @@ function markWrong(msg) {
     result: 'wrong',
     round: `${bagCursor}/${bagTotal}`
   });
+  if (!maybeFinishRound()) showFloatingNext();
 }
 function skipQuestion() {
   if (answered) { newQuestion(); return; }
+  if (roundComplete) return;
   answered = true;
   wrong++;
+  roundDetails.push({ key: currentQuestion.tonic + (currentQuestion.quality === 'minor' ? 'm' : ''), correct: false });
   updateScoreUI();
   perPositionResults = userTokens.map(() => false);
   feedback.textContent = '— skipped';
   feedback.className = 'feedback wrong';
   renderTray(); renderBanks(); updateActionButtons();
   showSolution();
-  showFloatingNext();
   saveState('skip', {
     question: currentQuestion.question,
     yourAnswer: userTokens.join(' ') || '(none)',
@@ -1241,6 +1478,7 @@ function skipQuestion() {
     result: 'skipped',
     round: `${bagCursor}/${bagTotal}`
   });
+  if (!maybeFinishRound()) showFloatingNext();
 }
 
 /* =========================================================
@@ -1490,7 +1728,7 @@ function showSolution() {
    EVENTS
    ========================================================= */
 undoBtn.addEventListener('click', () => {
-  if (answered || userTokens.length === 0) return;
+  if (answered || roundComplete || userTokens.length === 0) return;
   userTokens.pop();
   perPositionResults = [];
   renderTray();
@@ -1498,7 +1736,7 @@ undoBtn.addEventListener('click', () => {
   saveState('draw');
 });
 clearBtn.addEventListener('click', () => {
-  if (answered) return;
+  if (answered || roundComplete) return;
   userTokens = [];
   perPositionResults = [];
   renderTray();
@@ -1509,7 +1747,14 @@ checkBtn.addEventListener('click', checkAnswer);
 skipBtn.addEventListener('click', skipQuestion);
 showSolutionBtn.addEventListener('click', showSolution);
 newQuestionBtn.addEventListener('click', newQuestion);
-floatingNextBtn.addEventListener('click', newQuestion);
+floatingNextBtn.addEventListener('click', () => {
+  if (roundComplete) {
+    // Treat as "start new round"
+    newQuestion();
+  } else {
+    newQuestion();
+  }
+});
 resetBtn.addEventListener('click', async () => {
   if (!confirm('Reset the shared score and round for all devices?')) return;
   correct = 0; wrong = 0; questionNumber = 0;
@@ -1517,6 +1762,9 @@ resetBtn.addEventListener('click', async () => {
   bagCursor = 0;
   bagTotal = 0;
   bagSignature = '';
+  roundDetails = [];
+  roundComplete = false;
+  hideRoundCompleteBanner();
   updateScoreUI();
   try {
     await postToSheet({ command: 'reset' });
