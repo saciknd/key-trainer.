@@ -407,6 +407,7 @@ const SHEET_URL = 'https://script.google.com/macros/s/AKfycbximctLa4BPP6ZPBvWzNI
 const syncStatus = document.getElementById('syncStatus');
 
 let lastSaveTime = 0;
+const SAVE_GRACE_MS = 8000;   // don't adopt sheet state within 8s of a save
 
 function setSyncStatus(text, cls) {
   syncStatus.textContent = text;
@@ -1020,6 +1021,13 @@ async function saveState(command, extra) {
 }
 
 function applyStateFromSheet(state) {
+  // Did the current question change?
+  const prevKey = currentQuestion ? currentQuestion.keyStr + '|' + currentQuestion.type : '';
+  const nextKey = state.currentQuestion && state.currentQuestion.keyStr
+    ? state.currentQuestion.keyStr + '|' + (state.currentQuestion.mode === 'scale' ? 'scale' : 'chords')
+    : '';
+  const questionChanged = prevKey !== nextKey;
+
   correct = state.scoreCorrect || 0;
   wrong = state.scoreWrong || 0;
   questionNumber = state.currentQuestionIndex || 0;
@@ -1079,7 +1087,10 @@ function applyStateFromSheet(state) {
   updateScoreUI();
   updateRoundLabel();
   renderTray();
-  renderBanks();
+  if (questionChanged) {
+    openGroups.clear();
+    renderBanks();
+  }
   updateActionButtons();
 }
 
@@ -1566,7 +1577,7 @@ async function pollForUpdates() {
       : '';
 
     if (answered && sheetQuestionKey === ourQuestionKey) return;
-    if (Date.now() - lastSaveTime < 2000) return;
+    if (Date.now() - lastSaveTime < SAVE_GRACE_MS) return;
 
     const sheetScore = (state.scoreCorrect || 0) + (state.scoreWrong || 0);
     const ourScore = correct + wrong;
