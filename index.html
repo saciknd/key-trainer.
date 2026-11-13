@@ -375,6 +375,8 @@ document.addEventListener('keydown', (e) => {
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbximctLa4BPP6ZPBvWzNI_oYrUSjTz0Ohi0s6NWIkT5LnQavWGOepmOmYG76KLMeE0JBw/exec';
 const syncStatus = document.getElementById('syncStatus');
 
+let lastSaveTime = 0;   // timestamp of the last local save
+
 function setSyncStatus(text, cls) {
   syncStatus.textContent = text;
   syncStatus.className = 'sync-status' + (cls ? ' ' + cls : '');
@@ -710,6 +712,8 @@ const CHORD_GROUPS = [
   { letter: 'B', chords: ['B','Bm','Bdim','Bb','Bbm','Bbdim','B#','B#m','B#dim'] }
 ];
 
+let openGroups = new Set();  // track which chord groups are expanded
+
 /* =========================================================
    SHUFFLE BAG
    ========================================================= */
@@ -899,11 +903,16 @@ function renderBanks() {
     CHORD_GROUPS.forEach(group => {
       const groupEl = document.createElement('div');
       groupEl.className = 'chord-group';
+      if (openGroups.has(group.letter)) groupEl.classList.add('open');
       const header = document.createElement('button');
       header.className = 'chord-group-header';
       header.type = 'button';
       header.innerHTML = `<span class="root-letter">${group.letter}</span><span class="arrow">▶</span>`;
-      header.addEventListener('click', () => groupEl.classList.toggle('open'));
+      header.addEventListener('click', () => {
+        if (openGroups.has(group.letter)) openGroups.delete(group.letter);
+        else openGroups.add(group.letter);
+        groupEl.classList.toggle('open');
+      });
       groupEl.appendChild(header);
       const body = document.createElement('div');
       body.className = 'chord-group-body';
@@ -965,6 +974,7 @@ function buildStatePayload(command, extra) {
 }
 
 async function saveState(command, extra) {
+  lastSaveTime = Date.now();
   try {
     await postToSheet(buildStatePayload(command, extra));
     setSyncStatus('✓ Saved to sheet', 'synced');
@@ -1037,7 +1047,7 @@ function applyStateFromSheet(state) {
 }
 
 /* =========================================================
-   NEW QUESTION (submits if unanswered, then advances)
+   NEW QUESTION
    ========================================================= */
 function newQuestion() {
   if (!answered && currentQuestion && userTokens.length > 0) {
@@ -1501,10 +1511,11 @@ async function initFromSheet() {
 }
 initFromSheet();
 
-/* Poll every 5 seconds. Adopt the sheet's state whenever it differs —
-   including when the other device has moved to a new question while we're
-   mid-review. Only skip the poll if we're reviewing the SAME question
-   (so we don't yank the solution away). */
+/* Poll every 5 seconds. Three rules:
+   1. If we're reviewing the same question, don't disturb.
+   2. If we saved within the last 2 seconds, don't adopt — the sheet may be
+      reporting our previous state before our POST lands.
+   3. Otherwise adopt whenever anything differs. */
 async function pollForUpdates() {
   if (document.visibilityState !== 'visible') return;
   try {
@@ -1516,8 +1527,8 @@ async function pollForUpdates() {
       ? currentQuestion.keyStr + '|' + (currentQuestion.type === 'scale' ? 'scale' : 'chords')
       : '';
 
-    // If we're reviewing this exact question, don't disturb.
     if (answered && sheetQuestionKey === ourQuestionKey) return;
+    if (Date.now() - lastSaveTime < 2000) return;
 
     const sheetScore = (state.scoreCorrect || 0) + (state.scoreWrong || 0);
     const ourScore = correct + wrong;
