@@ -146,6 +146,25 @@
   .feedback { text-align: center; font-weight: 600; font-size: 0.9rem; min-height: 1.3rem; margin-bottom: 0.7rem; }
   .feedback.correct { color: #5b8c4e; }
   .feedback.wrong { color: #b45a4a; }
+
+  /* Next-question bar that appears after Check/Skip */
+  .next-question-bar {
+    display: none;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.9rem;
+  }
+  .next-question-bar.show { display: flex; }
+  button.action.next-main {
+    background: #5b8c4e;
+    border-color: #3f6a34;
+    color: #fff;
+    font-size: 1rem;
+    padding: 0.75rem 2rem;
+  }
+  button.action.next-main:hover:not(:disabled) { background: #4f7d43; }
+
   .solution { display: none; background: #f7f3eb; border: 2px solid #e0d9cc; border-radius: 14px; padding: 1rem 1.1rem; margin-bottom: 0.9rem; font-size: 0.85rem; line-height: 1.5; color: #3f3a33; }
   .solution.show { display: block; }
   .solution h3 { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: #8a7f6c; margin-bottom: 0.5rem; }
@@ -265,6 +284,10 @@
 
   <div class="feedback" id="feedback"></div>
 
+  <div class="next-question-bar" id="nextQuestionBar">
+    <button class="action next-main" id="nextQuestionBtn">Next question →</button>
+  </div>
+
   <div class="btn-row">
     <button class="action ghost" id="showSolutionBtn">💡 Show how to work it out</button>
     <button class="action ghost" id="skipBtn">Skip →</button>
@@ -311,7 +334,7 @@
         The worked solution opens too.
       </li>
     </ul>
-    <p>You can't edit after Check — but you can read the solution for as long as you like, then press <b>New question</b>.</p>
+    <p>You can't edit after Check — but you can read the solution for as long as you like, then press <b>Next question</b>.</p>
 
     <h3>New question = submit and advance</h3>
     <p>
@@ -375,7 +398,7 @@ document.addEventListener('keydown', (e) => {
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbximctLa4BPP6ZPBvWzNI_oYrUSjTz0Ohi0s6NWIkT5LnQavWGOepmOmYG76KLMeE0JBw/exec';
 const syncStatus = document.getElementById('syncStatus');
 
-let lastSaveTime = 0;   // timestamp of the last local save
+let lastSaveTime = 0;
 
 function setSyncStatus(text, cls) {
   syncStatus.textContent = text;
@@ -712,7 +735,7 @@ const CHORD_GROUPS = [
   { letter: 'B', chords: ['B','Bm','Bdim','Bb','Bbm','Bbdim','B#','B#m','B#dim'] }
 ];
 
-let openGroups = new Set();  // track which chord groups are expanded
+let openGroups = new Set();
 
 /* =========================================================
    SHUFFLE BAG
@@ -772,6 +795,8 @@ const solutionContent= document.getElementById('solutionContent');
 const showSolutionBtn= document.getElementById('showSolutionBtn');
 const skipBtn        = document.getElementById('skipBtn');
 const newQuestionBtn = document.getElementById('newQuestionBtn');
+const nextQuestionBar= document.getElementById('nextQuestionBar');
+const nextQuestionBtn= document.getElementById('nextQuestionBtn');
 const resetBtn       = document.getElementById('resetBtn');
 const posNum         = document.getElementById('posNum');
 const correctCountEl = document.getElementById('correctCount');
@@ -946,6 +971,9 @@ function updateActionButtons() {
   checkBtn.disabled = answered || userTokens.length === 0;
 }
 
+function showNextBar() { nextQuestionBar.classList.add('show'); }
+function hideNextBar() { nextQuestionBar.classList.remove('show'); }
+
 /* =========================================================
    STATE SAVE / LOAD
    ========================================================= */
@@ -1029,6 +1057,7 @@ function applyStateFromSheet(state) {
 
     solutionContent.innerHTML = buildSolutionHTML(currentQuestion);
     solutionPanel.classList.add('show');
+    showNextBar();
   } else {
     userTokens = savedTokens.slice();
     perPositionResults = [];
@@ -1036,6 +1065,7 @@ function applyStateFromSheet(state) {
     feedback.textContent = '';
     feedback.className = 'feedback';
     solutionPanel.classList.remove('show');
+    hideNextBar();
   }
 
   posNum.textContent = questionNumber;
@@ -1097,6 +1127,7 @@ function newQuestion() {
   feedback.textContent = '';
   feedback.className = 'feedback';
   solutionPanel.classList.remove('show');
+  hideNextBar();
   updateRoundLabel();
   renderTray();
   renderBanks();
@@ -1148,6 +1179,15 @@ function canonicalChordName(name) {
   return canonicalNote(m[1]) + m[2].toLowerCase();
 }
 
+function scrollToNextBar() {
+  // Scroll the next-question bar into view so the result + Next button are both visible
+  try {
+    nextQuestionBar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } catch (e) {
+    nextQuestionBar.scrollIntoView();
+  }
+}
+
 function markCorrect() {
   answered = true;
   correct++;
@@ -1156,6 +1196,7 @@ function markCorrect() {
   feedback.className = 'feedback correct';
   renderTray(); renderBanks(); updateActionButtons();
   showSolution();
+  showNextBar();
   saveState('answer', {
     question: currentQuestion.question,
     yourAnswer: userTokens.join(' ') || '(none)',
@@ -1163,6 +1204,7 @@ function markCorrect() {
     result: 'correct',
     round: `${bagCursor}/${bagTotal}`
   });
+  scrollToNextBar();
 }
 function markWrong(msg) {
   answered = true;
@@ -1172,6 +1214,7 @@ function markWrong(msg) {
   feedback.className = 'feedback wrong';
   renderTray(); renderBanks(); updateActionButtons();
   showSolution();
+  showNextBar();
   saveState('answer', {
     question: currentQuestion.question,
     yourAnswer: userTokens.join(' ') || '(none)',
@@ -1179,6 +1222,7 @@ function markWrong(msg) {
     result: 'wrong',
     round: `${bagCursor}/${bagTotal}`
   });
+  scrollToNextBar();
 }
 function skipQuestion() {
   if (answered) { newQuestion(); return; }
@@ -1190,6 +1234,7 @@ function skipQuestion() {
   feedback.className = 'feedback wrong';
   renderTray(); renderBanks(); updateActionButtons();
   showSolution();
+  showNextBar();
   saveState('skip', {
     question: currentQuestion.question,
     yourAnswer: userTokens.join(' ') || '(none)',
@@ -1197,6 +1242,7 @@ function skipQuestion() {
     result: 'skipped',
     round: `${bagCursor}/${bagTotal}`
   });
+  scrollToNextBar();
 }
 
 /* =========================================================
@@ -1465,6 +1511,7 @@ checkBtn.addEventListener('click', checkAnswer);
 skipBtn.addEventListener('click', skipQuestion);
 showSolutionBtn.addEventListener('click', showSolution);
 newQuestionBtn.addEventListener('click', newQuestion);
+nextQuestionBtn.addEventListener('click', newQuestion);
 resetBtn.addEventListener('click', async () => {
   if (!confirm('Reset the shared score and round for all devices?')) return;
   correct = 0; wrong = 0; questionNumber = 0;
@@ -1511,11 +1558,6 @@ async function initFromSheet() {
 }
 initFromSheet();
 
-/* Poll every 5 seconds. Three rules:
-   1. If we're reviewing the same question, don't disturb.
-   2. If we saved within the last 2 seconds, don't adopt — the sheet may be
-      reporting our previous state before our POST lands.
-   3. Otherwise adopt whenever anything differs. */
 async function pollForUpdates() {
   if (document.visibilityState !== 'visible') return;
   try {
