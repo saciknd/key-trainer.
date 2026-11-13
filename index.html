@@ -96,8 +96,6 @@
   .wake-status-line.unavailable { color: #b8860b; }
   .progress-bar { height: 6px; background: #e6e2d8; border-radius: 4px; overflow: hidden; margin-bottom: 0.6rem; }
   .progress-fill { height: 100%; width: 0%; background: #b08d57; transition: width 0.35s ease; }
-  .round-label { text-align: center; font-size: 0.75rem; color: #8a8172; margin-bottom: 0.8rem; letter-spacing: 0.03em; }
-  .round-label b { color: #5a4a32; }
   .scoreboard { display: flex; justify-content: space-between; font-size: 0.8rem; color: #777; margin-bottom: 1rem; }
   .scoreboard .score-correct { color: #5b8c4e; font-weight: 600; }
   .scoreboard .score-wrong { color: #b45a4a; font-weight: 600; }
@@ -252,10 +250,8 @@
     <div class="progress-fill" id="progressFill"></div>
   </div>
 
-  <div class="round-label" id="roundLabel">Round: <b>0 / 0</b></div>
-
   <div class="scoreboard">
-    <div>Question <span id="posNum">1</span></div>
+    <div>Question <span id="posNum">0 / 0</span></div>
     <div>
       <span class="score-correct">✓ <span id="correctCount">0</span></span>
       &nbsp;·&nbsp;
@@ -407,7 +403,7 @@ const SHEET_URL = 'https://script.google.com/macros/s/AKfycbximctLa4BPP6ZPBvWzNI
 const syncStatus = document.getElementById('syncStatus');
 
 let lastSaveTime = 0;
-const SAVE_GRACE_MS = 8000;   // don't adopt sheet state within 8s of a save
+const SAVE_GRACE_MS = 8000;
 
 function setSyncStatus(text, cls) {
   syncStatus.textContent = text;
@@ -810,7 +806,6 @@ const posNum         = document.getElementById('posNum');
 const correctCountEl = document.getElementById('correctCount');
 const wrongCountEl   = document.getElementById('wrongCount');
 const progressFill   = document.getElementById('progressFill');
-const roundLabel     = document.getElementById('roundLabel');
 
 let currentQuestion = null;
 let userTokens = [];
@@ -825,11 +820,13 @@ function updateScoreUI() {
   wrongCountEl.textContent = wrong;
   const total = correct + wrong;
   progressFill.style.width = total ? ((correct / total) * 100) + '%' : '0%';
+  updatePosNum();
 }
 
-function updateRoundLabel() {
-  if (!bagTotal) { roundLabel.innerHTML = `Round: <b>0 / 0</b>`; return; }
-  roundLabel.innerHTML = `Round: <b>${bagCursor} / ${bagTotal}</b>`;
+function updatePosNum() {
+  // Question X / Y where Y = X + how many left in the bag
+  const total = questionNumber + bag.length;
+  posNum.textContent = `${questionNumber} / ${total}`;
 }
 
 function populateKeySelector() {
@@ -1021,7 +1018,6 @@ async function saveState(command, extra) {
 }
 
 function applyStateFromSheet(state) {
-  // Did the current question change?
   const prevKey = currentQuestion ? currentQuestion.keyStr + '|' + currentQuestion.type : '';
   const nextKey = state.currentQuestion && state.currentQuestion.keyStr
     ? state.currentQuestion.keyStr + '|' + (state.currentQuestion.mode === 'scale' ? 'scale' : 'chords')
@@ -1083,9 +1079,7 @@ function applyStateFromSheet(state) {
     hideFloatingNext();
   }
 
-  posNum.textContent = questionNumber;
   updateScoreUI();
-  updateRoundLabel();
   renderTray();
   if (questionChanged) {
     openGroups.clear();
@@ -1138,7 +1132,6 @@ function newQuestion() {
   currentQuestion = generateQuestionFromKeyStr(draw.keyStr, draw.mode);
   questionLabel.textContent = currentQuestion.type === 'scale' ? 'Scale' : 'Chords';
   questionText.textContent = currentQuestion.question;
-  posNum.textContent = questionNumber;
   userTokens = [];
   perPositionResults = [];
   answered = false;
@@ -1147,7 +1140,7 @@ function newQuestion() {
   solutionPanel.classList.remove('show');
   hideFloatingNext();
   openGroups.clear();
-  updateRoundLabel();
+  updateScoreUI();
   renderTray();
   renderBanks();
   updateActionButtons();
